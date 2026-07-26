@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Controle de Sepse</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h2>Sistema de Controle</h2>
+            <p>Sinais Vitais e Sepse</p>
+            
+            <form onsubmit="realizarLogin(event)">
+                <div class="input-group">
+                    <label for="usuario">Usuario</label>
+                    <input type="text" id="usuario" name="usuario" required placeholder="Digite sua identificação">
+                </div>
+                
+                <div class="input-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" required placeholder="Sua senha de acesso">
+                </div>
+                
+                <button type="submit" class="btn-login">Entrar no Sistema</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function realizarLogin(event) {
+            event.preventDefault(); // Impede o envio padrão do formulário
+
+            const usuarioInput = document.getElementById("usuario").value.trim();
+            const senhaInput = document.getElementById("senha").value.trim();
+
+            // Defina aqui as credenciais de acesso oficiais
+            const usuarioCorreto = "admin";
+            const senhaCorreta = "missao2026";
+
+            if (usuarioInput === usuarioCorreto && senhaInput === senhaCorreta) {
+                // Redireciona para o painel principal se os dados estiverem corretos
+                window.location.href = "dashboard.html";
+            } else {
+                alert("⚠️ Acesso Negado: Usuário ou senha incorretos.");
+            }
+        }
+    </script>
+</body>
+</html>
