@@ -1,21 +1,21 @@
 // --- CONTADORES GLOBAIS DE SAÍDA E INDICADORES DO MÊS ---
 let contadoresSaidas = {
-    alta: 0,
-    "HC UFU": 0,
-    "Hospital Municipal": 0,
-    "CIP": 0,
-    "CAPS": 0,
-    "UCCI": 0,
-    obito: 0
+  alta: 0,
+  "HC UFU": 0,
+  "Hospital Municipal": 0,
+  CIP: 0,
+  CAPS: 0,
+  UCCI: 0,
+  obito: 0,
 };
 
 // Acumuladores mensais de indicadores do setor
 let indicadoresMensais = {
-    sepse: 0,
-    estavel: 0,
-    baixo: 0,
-    medio: 0,
-    alto: 0
+  sepse: 0,
+  estavel: 0,
+  baixo: 0,
+  medio: 0,
+  alto: 0,
 };
 
 let cardAtualTransf = null;
@@ -23,12 +23,12 @@ let cardAtualTransfInterna = null;
 let meuGraficoOcupacao = null;
 
 // Variável para memorizar a enfermaria ativa antes de iniciar uma busca
-let setorAtivoAntesDaBusca = 'painel-central';
+let setorAtivoAntesDaBusca = "painel-central";
 
 // Gestão de Datas e Calendário
 const dataAtualReal = new Date();
 const dataHojeStr = formatarDataChave(dataAtualReal); // Data real do dia de hoje (fixa)
-let dataSelecionadaStr = dataHojeStr;               // Data sendo visualizada/editada
+let dataSelecionadaStr = dataHojeStr; // Data sendo visualizada/editada
 let mesExibido = dataAtualReal.getMonth();
 let anoExibido = dataAtualReal.getFullYear();
 
@@ -36,156 +36,174 @@ let anoExibido = dataAtualReal.getFullYear();
 const historicoOcupacaoDiaria = Array(31).fill(0);
 
 document.addEventListener("DOMContentLoaded", () => {
-    const mainContent = document.querySelector(".content");
+  const mainContent = document.querySelector(".content");
 
-    // Delegação de eventos para capturar alterações em tempo real
-    mainContent.addEventListener("input", tratarMudancaVitais);
-    mainContent.addEventListener("change", tratarMudancaVitais);
+  // Delegação de eventos para capturar alterações em tempo real
+  mainContent.addEventListener("input", tratarMudancaVitais);
+  mainContent.addEventListener("change", tratarMudancaVitais);
 
-    // Inicialização do gráfico, calendário e carregamento do plantão do dia via Servidor/Banco de Dados
-    inicializarGraficoOcupacao();
-    renderizarCalendario();
-    carregarDadosDoDia(dataSelecionadaStr);
+  // Inicialização do gráfico, calendário e carregamento do plantão do dia via Servidor/Banco de Dados
+  inicializarGraficoOcupacao();
+  renderizarCalendario();
+  carregarDadosDoDia(dataSelecionadaStr);
 });
 
 // Helper para formatar data em AAAA-MM-DD
 function formatarDataChave(dateObj) {
-    const ano = dateObj.getFullYear();
-    const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const dia = String(dateObj.getDate()).padStart(2, '0');
-    return `${ano}-${mes}-${dia}`;
+  const ano = dateObj.getFullYear();
+  const mes = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const dia = String(dateObj.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
 }
 
 // --- RENDERIZAÇÃO DO MINI CALENDÁRIO ---
 function renderizarCalendario() {
-    const grid = document.getElementById('cal-grid-dias');
-    const labelMesAno = document.getElementById('mes-ano');
-    if (!grid || !labelMesAno) return;
+  const grid = document.getElementById("cal-grid-dias");
+  const labelMesAno = document.getElementById("mes-ano");
+  if (!grid || !labelMesAno) return;
 
-    const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-    labelMesAno.textContent = `${nomesMeses[mesExibido]} / ${anoExibido}`;
+  const nomesMeses = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+  labelMesAno.textContent = `${nomesMeses[mesExibido]} / ${anoExibido}`;
 
-    grid.innerHTML = '';
+  grid.innerHTML = "";
 
-    const diasSemana = ["D", "S", "T", "Q", "Q", "S", "S"];
-    diasSemana.forEach(d => {
-        const span = document.createElement('span');
-        span.textContent = d;
-        grid.appendChild(span);
-    });
+  const diasSemana = ["D", "S", "T", "Q", "Q", "S", "S"];
+  diasSemana.forEach((d) => {
+    const span = document.createElement("span");
+    span.textContent = d;
+    grid.appendChild(span);
+  });
 
-    const primeiroDiaMes = new Date(anoExibido, mesExibido, 1).getDay();
-    const totalDiasMes = new Date(anoExibido, mesExibido + 1, 0).getDate();
+  const primeiroDiaMes = new Date(anoExibido, mesExibido, 1).getDay();
+  const totalDiasMes = new Date(anoExibido, mesExibido + 1, 0).getDate();
 
-    for (let i = 0; i < primeiroDiaMes; i++) {
-        const empty = document.createElement('a');
-        empty.classList.add('other-month');
-        grid.appendChild(empty);
+  for (let i = 0; i < primeiroDiaMes; i++) {
+    const empty = document.createElement("a");
+    empty.classList.add("other-month");
+    grid.appendChild(empty);
+  }
+
+  for (let dia = 1; dia <= totalDiasMes; dia++) {
+    const a = document.createElement("a");
+    a.textContent = dia;
+
+    const dataIso = `${anoExibido}-${String(mesExibido + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+
+    if (dataIso === dataHojeStr) {
+      a.classList.add("today");
     }
 
-    for (let dia = 1; dia <= totalDiasMes; dia++) {
-        const a = document.createElement('a');
-        a.textContent = dia;
-
-        const dataIso = `${anoExibido}-${String(mesExibido + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-        
-        if (dataIso === dataHojeStr) {
-            a.classList.add('today');
-        }
-
-        if (dataIso === dataSelecionadaStr && dataIso !== dataHojeStr) {
-            a.classList.add('selected-day');
-        }
-
-        a.onclick = (e) => {
-            e.preventDefault();
-            salvarDadosDoDia(dataSelecionadaStr);
-            dataSelecionadaStr = dataIso;
-
-            renderizarCalendario();
-            carregarDadosDoDia(dataIso);
-        };
-
-        grid.appendChild(a);
+    if (dataIso === dataSelecionadaStr && dataIso !== dataHojeStr) {
+      a.classList.add("selected-day");
     }
+
+    a.onclick = (e) => {
+      e.preventDefault();
+      salvarDadosDoDia(dataSelecionadaStr);
+      dataSelecionadaStr = dataIso;
+
+      renderizarCalendario();
+      carregarDadosDoDia(dataIso);
+    };
+
+    grid.appendChild(a);
+  }
 }
 
 function mudarMes(delta) {
-    mesExibido += delta;
-    if (mesExibido < 0) {
-        mesExibido = 11;
-        anoExibido--;
-    } else if (mesExibido > 11) {
-        mesExibido = 0;
-        anoExibido++;
-    }
-    renderizarCalendario();
+  mesExibido += delta;
+  if (mesExibido < 0) {
+    mesExibido = 11;
+    anoExibido--;
+  } else if (mesExibido > 11) {
+    mesExibido = 0;
+    anoExibido++;
+  }
+  renderizarCalendario();
 }
 
 // --- CÁLCULO E EXIBIÇÃO DA IDADE DA CRIANÇA ---
 function atualizarBadgeIdade(inputData) {
-    const card = inputData.closest('.patient-card');
-    if (!card) return;
+  const card = inputData.closest(".patient-card");
+  if (!card) return;
 
-    const badge = card.querySelector('.badge-idade');
-    if (!badge) return;
+  const badge = card.querySelector(".badge-idade");
+  if (!badge) return;
 
-    const valData = inputData.value;
-    if (!valData) {
-        badge.textContent = "--";
-        return;
-    }
+  const valData = inputData.value;
+  if (!valData) {
+    badge.textContent = "--";
+    return;
+  }
 
-    const nasc = new Date(valData);
-    const hoje = new Date();
+  const nasc = new Date(valData);
+  const hoje = new Date();
 
-    let anos = hoje.getFullYear() - nasc.getFullYear();
-    let meses = hoje.getMonth() - nasc.getMonth();
-    let dias = hoje.getDate() - nasc.getDate();
+  let anos = hoje.getFullYear() - nasc.getFullYear();
+  let meses = hoje.getMonth() - nasc.getMonth();
+  let dias = hoje.getDate() - nasc.getDate();
 
-    if (dias < 0) {
-        meses--;
-    }
-    if (meses < 0) {
-        anos--;
-        meses += 12;
-    }
+  if (dias < 0) {
+    meses--;
+  }
+  if (meses < 0) {
+    anos--;
+    meses += 12;
+  }
 
-    let totalMeses = (hoje.getFullYear() - nasc.getFullYear()) * 12 + (hoje.getMonth() - nasc.getMonth());
+  let totalMeses =
+    (hoje.getFullYear() - nasc.getFullYear()) * 12 +
+    (hoje.getMonth() - nasc.getMonth());
 
-    if (totalMeses < 1) {
-        badge.textContent = "< 1m";
-    } else if (totalMeses < 12) {
-        badge.textContent = `${totalMeses}m`;
+  if (totalMeses < 1) {
+    badge.textContent = "< 1m";
+  } else if (totalMeses < 12) {
+    badge.textContent = `${totalMeses}m`;
+  } else {
+    if (meses > 0) {
+      badge.textContent = `${anos}a ${meses}m`;
     } else {
-        if (meses > 0) {
-            badge.textContent = `${anos}a ${meses}m`;
-        } else {
-            badge.textContent = `${anos}a`;
-        }
+      badge.textContent = `${anos}a`;
     }
+  }
 }
 
 // --- ADICIONAR E REMOVER HORÁRIOS EXTRAS ORDENADOS CRONOLOGICAMENTE ---
 function adicionarHorarioExtraOrdenado(btn) {
-    const tableContainer = btn.closest('.table-responsive');
-    const tbody = tableContainer.querySelector('.vitals-table tbody');
-    const abaPai = btn.closest('.tab-pane');
-    const isPediatria = abaPai && abaPai.id === 'enf-pediatria';
+  const tableContainer = btn.closest(".table-responsive");
+  const tbody = tableContainer.querySelector(".vitals-table tbody");
+  const abaPai = btn.closest(".tab-pane");
+  const isPediatria = abaPai && abaPai.id === "enf-pediatria";
 
-    const agora = new Date();
-    const horaPadrao = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
-    const novoHorario = prompt("Digite o horário extra (ex: 09:30, 14:15):", horaPadrao);
+  const agora = new Date();
+  const horaPadrao = `${String(agora.getHours()).padStart(2, "0")}:${String(agora.getMinutes()).padStart(2, "0")}`;
+  const novoHorario = prompt(
+    "Digite o horário extra (ex: 09:30, 14:15):",
+    horaPadrao,
+  );
 
-    if (!novoHorario || novoHorario.trim() === "") return;
-    const horaFormatada = novoHorario.trim();
+  if (!novoHorario || novoHorario.trim() === "") return;
+  const horaFormatada = novoHorario.trim();
 
-    const novaLinha = document.createElement('tr');
-    novaLinha.classList.add('linha-horario-extra');
-    novaLinha.setAttribute('data-hora', horaFormatada);
+  const novaLinha = document.createElement("tr");
+  novaLinha.classList.add("linha-horario-extra");
+  novaLinha.setAttribute("data-hora", horaFormatada);
 
-    if (isPediatria) {
-        novaLinha.innerHTML = `
+  if (isPediatria) {
+    novaLinha.innerHTML = `
             <td class="time-col">
                 <div class="cell-hora-extra">
                     <span>${horaFormatada}</span>
@@ -228,8 +246,8 @@ function adicionarHorarioExtraOrdenado(btn) {
                 </select>
             </td>
         `;
-    } else {
-        novaLinha.innerHTML = `
+  } else {
+    novaLinha.innerHTML = `
             <td class="time-col">
                 <div class="cell-hora-extra">
                     <span>${horaFormatada}</span>
@@ -254,163 +272,184 @@ function adicionarHorarioExtraOrdenado(btn) {
                 </select>
             </td>
         `;
+  }
+
+  const linhasExistentes = Array.from(tbody.querySelectorAll("tr"));
+  let inserido = false;
+
+  for (let tr of linhasExistentes) {
+    const horaTr =
+      tr.getAttribute("data-hora") ||
+      tr.querySelector(".time-col")?.textContent.trim();
+    if (horaTr && horaFormatada < horaTr) {
+      tbody.insertBefore(novaLinha, tr);
+      inserido = true;
+      break;
     }
+  }
 
-    const linhasExistentes = Array.from(tbody.querySelectorAll('tr'));
-    let inserido = false;
+  if (!inserido) {
+    tbody.appendChild(novaLinha);
+  }
 
-    for (let tr of linhasExistentes) {
-        const horaTr = tr.getAttribute('data-hora') || tr.querySelector('.time-col')?.textContent.trim();
-        if (horaTr && horaFormatada < horaTr) {
-            tbody.insertBefore(novaLinha, tr);
-            inserido = true;
-            break;
-        }
-    }
-
-    if (!inserido) {
-        tbody.appendChild(novaLinha);
-    }
-
-    salvarDadosDoDia(dataSelecionadaStr);
+  salvarDadosDoDia(dataSelecionadaStr);
 }
 
 function removerLinhaExtraDireta(btnX) {
-    if (confirm("Deseja remover esta aferição de horário extra?")) {
-        const linha = btnX.closest('tr');
-        linha.remove();
-        atualizarPainelCentral();
-        salvarDadosDoDia(dataSelecionadaStr);
-    }
+  if (confirm("Deseja remover esta aferição de horário extra?")) {
+    const linha = btnX.closest("tr");
+    linha.remove();
+    atualizarPainelCentral();
+    salvarDadosDoDia(dataSelecionadaStr);
+  }
 }
 
 // --- PERSISTÊNCIA VIA API (SERVIDOR NODE.JS / SQLITE) ---
 function salvarDadosDoDia(dataChave) {
-    const dadosGerais = [];
+  const dadosGerais = [];
 
-    document.querySelectorAll('.tab-pane:not(#painel-central)').forEach(aba => {
-        const idSetor = aba.id;
-        aba.querySelectorAll('.patient-card').forEach(card => {
-            const nome = card.querySelector('.nome-input')?.value || "";
-            const dtNasc = card.querySelector('.dtnasc-input')?.value || "";
-            const prontuario = card.querySelector('.prontuario-input')?.value || "";
-            const tec = card.querySelector('.tec-input')?.value || "";
-            const isento = card.querySelector('.isento-relatorio')?.checked || false;
+  document.querySelectorAll(".tab-pane:not(#painel-central)").forEach((aba) => {
+    const idSetor = aba.id;
+    aba.querySelectorAll(".patient-card").forEach((card) => {
+      const nome = card.querySelector(".nome-input")?.value || "";
+      const dtNasc = card.querySelector(".dtnasc-input")?.value || "";
+      const prontuario = card.querySelector(".prontuario-input")?.value || "";
+      const tec = card.querySelector(".tec-input")?.value || "";
+      const isento = card.querySelector(".isento-relatorio")?.checked || false;
 
-            const vitais = [];
-            card.querySelectorAll('.vitals-table tbody tr').forEach(tr => {
-                const hora = tr.getAttribute('data-hora') || tr.querySelector('.time-col')?.textContent.trim() || "";
-                const inputs = Array.from(tr.querySelectorAll('input, select')).map(i => i.value);
-                const isExtra = tr.classList.contains('linha-horario-extra');
-                vitais.push({ hora, inputs, isExtra });
-            });
+      const vitais = [];
+      card.querySelectorAll(".vitals-table tbody tr").forEach((tr) => {
+        const hora =
+          tr.getAttribute("data-hora") ||
+          tr.querySelector(".time-col")?.textContent.trim() ||
+          "";
+        const inputs = Array.from(tr.querySelectorAll("input, select")).map(
+          (i) => i.value,
+        );
+        const isExtra = tr.classList.contains("linha-horario-extra");
+        vitais.push({ hora, inputs, isExtra });
+      });
 
-            if (nome.trim() !== "") {
-                dadosGerais.push({
-                    setor: idSetor,
-                    nome, dtNasc, prontuario, tec, isento, vitais
-                });
-            }
+      if (nome.trim() !== "") {
+        dadosGerais.push({
+          setor: idSetor,
+          nome,
+          dtNasc,
+          prontuario,
+          tec,
+          isento,
+          vitais,
         });
+      }
     });
+  });
 
-    fetch(`/api/plantao/${dataChave}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            plantao: dadosGerais,
-            saidas: contadoresSaidas,
-            indicadores: indicadoresMensais
-        })
-    }).catch(err => console.error("Erro ao salvar dados no servidor:", err));
+  fetch(`/api/plantao/${dataChave}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      plantao: dadosGerais,
+      saidas: contadoresSaidas,
+      indicadores: indicadoresMensais,
+    }),
+  }).catch((err) => console.error("Erro ao salvar dados no servidor:", err));
 }
 
 function carregarDadosDoDia(dataChave) {
-    fetch(`/api/plantao/${dataChave}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.saidas) {
-                contadoresSaidas = data.saidas;
-            } else {
-                Object.keys(contadoresSaidas).forEach(k => contadoresSaidas[k] = 0);
+  fetch(`/api/plantao/${dataChave}`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.saidas) {
+        contadoresSaidas = data.saidas;
+      } else {
+        Object.keys(contadoresSaidas).forEach((k) => (contadoresSaidas[k] = 0));
+      }
+
+      if (data.indicadores) {
+        indicadoresMensais = data.indicadores;
+      } else {
+        Object.keys(indicadoresMensais).forEach(
+          (k) => (indicadoresMensais[k] = 0),
+        );
+      }
+
+      const raw = data.plantao;
+      if (!raw) {
+        document
+          .querySelectorAll(".tab-pane:not(#painel-central)")
+          .forEach((aba) => {
+            const container = aba.querySelector(".patients-container");
+            if (!container) return;
+
+            const cards = container.querySelectorAll(".patient-card");
+            for (let i = 1; i < cards.length; i++) {
+              cards[i].remove();
             }
+            if (cards[0]) limparCardPaciente(cards[0]);
+          });
+        atualizarPainelCentral();
+        return;
+      }
 
-            if (data.indicadores) {
-                indicadoresMensais = data.indicadores;
-            } else {
-                Object.keys(indicadoresMensais).forEach(k => indicadoresMensais[k] = 0);
-            }
+      const dadosGerais = Array.isArray(raw) ? raw : JSON.parse(raw);
 
-            const raw = data.plantao;
-            if (!raw) {
-                document.querySelectorAll('.tab-pane:not(#painel-central)').forEach(aba => {
-                    const container = aba.querySelector('.patients-container');
-                    if (!container) return;
+      document
+        .querySelectorAll(".tab-pane:not(#painel-central)")
+        .forEach((aba) => {
+          const container = aba.querySelector(".patients-container");
+          if (!container) return;
 
-                    const cards = container.querySelectorAll('.patient-card');
-                    for (let i = 1; i < cards.length; i++) {
-                        cards[i].remove();
-                    }
-                    if (cards[0]) limparCardPaciente(cards[0]);
-                });
-                atualizarPainelCentral();
-                return;
-            }
+          const cards = container.querySelectorAll(".patient-card");
+          for (let i = 1; i < cards.length; i++) {
+            cards[i].remove();
+          }
+          if (cards[0]) limparCardPaciente(cards[0]);
+        });
 
-            const dadosGerais = Array.isArray(raw) ? raw : JSON.parse(raw);
+      dadosGerais.forEach((p) => {
+        const aba = document.getElementById(p.setor);
+        if (!aba) return;
 
-            document.querySelectorAll('.tab-pane:not(#painel-central)').forEach(aba => {
-                const container = aba.querySelector('.patients-container');
-                if (!container) return;
+        const container = aba.querySelector(".patients-container");
+        let card = container.querySelector(".patient-card");
 
-                const cards = container.querySelectorAll('.patient-card');
-                for (let i = 1; i < cards.length; i++) {
-                    cards[i].remove();
-                }
-                if (cards[0]) limparCardPaciente(cards[0]);
-            });
+        if (card.querySelector(".nome-input").value !== "") {
+          const novo = card.cloneNode(true);
+          limparCardPaciente(novo);
+          container.appendChild(novo);
+          card = novo;
+        }
 
-            dadosGerais.forEach(p => {
-                const aba = document.getElementById(p.setor);
-                if (!aba) return;
+        card.querySelector(".nome-input").value = p.nome;
+        if (card.querySelector(".dtnasc-input")) {
+          card.querySelector(".dtnasc-input").value = p.dtNasc;
+          atualizarBadgeIdade(card.querySelector(".dtnasc-input"));
+        }
+        if (card.querySelector(".prontuario-input"))
+          card.querySelector(".prontuario-input").value = p.prontuario;
+        if (card.querySelector(".tec-input"))
+          card.querySelector(".tec-input").value = p.tec;
+        if (card.querySelector(".isento-relatorio"))
+          card.querySelector(".isento-relatorio").checked = p.isento;
 
-                const container = aba.querySelector('.patients-container');
-                let card = container.querySelector('.patient-card');
+        const tbody = card.querySelector(".vitals-table tbody");
 
-                if (card.querySelector('.nome-input').value !== "") {
-                    const novo = card.cloneNode(true);
-                    limparCardPaciente(novo);
-                    container.appendChild(novo);
-                    card = novo;
-                }
+        p.vitais.forEach((objVital) => {
+          const valores = Array.isArray(objVital) ? objVital : objVital.inputs;
+          const hora = objVital.hora || "";
+          const isExtra = objVital.isExtra || false;
 
-                card.querySelector('.nome-input').value = p.nome;
-                if (card.querySelector('.dtnasc-input')) {
-                    card.querySelector('.dtnasc-input').value = p.dtNasc;
-                    atualizarBadgeIdade(card.querySelector('.dtnasc-input'));
-                }
-                if (card.querySelector('.prontuario-input')) card.querySelector('.prontuario-input').value = p.prontuario;
-                if (card.querySelector('.tec-input')) card.querySelector('.tec-input').value = p.tec;
-                if (card.querySelector('.isento-relatorio')) card.querySelector('.isento-relatorio').checked = p.isento;
+          let linha = null;
 
-                const tbody = card.querySelector('.vitals-table tbody');
+          if (isExtra) {
+            const btnAdd = card.querySelector(".btn-add-horario-clean");
+            if (btnAdd) {
+              const novaLinha = document.createElement("tr");
+              novaLinha.classList.add("linha-horario-extra");
+              novaLinha.setAttribute("data-hora", hora);
 
-                p.vitais.forEach((objVital) => {
-                    const valores = Array.isArray(objVital) ? objVital : objVital.inputs;
-                    const hora = objVital.hora || "";
-                    const isExtra = objVital.isExtra || false;
-
-                    let linha = null;
-
-                    if (isExtra) {
-                        const btnAdd = card.querySelector('.btn-add-horario-clean');
-                        if (btnAdd) {
-                            const novaLinha = document.createElement('tr');
-                            novaLinha.classList.add('linha-horario-extra');
-                            novaLinha.setAttribute('data-hora', hora);
-
-                            if (p.setor === 'enf-pediatria') {
-                                novaLinha.innerHTML = `
+              if (p.setor === "enf-pediatria") {
+                novaLinha.innerHTML = `
                                     <td class="time-col"><div class="cell-hora-extra"><span>${hora}</span><button type="button" class="btn-del-linha" onclick="removerLinhaExtraDireta(this)">✖</button></div></td>
                                     <td><input type="number" class="pews-fc"></td>
                                     <td><input type="number" class="pews-fr"></td>
@@ -448,8 +487,8 @@ function carregarDadosDoDia(dataChave) {
                                         </select>
                                     </td>
                                 `;
-                            } else {
-                                novaLinha.innerHTML = `
+              } else {
+                novaLinha.innerHTML = `
                                     <td class="time-col"><div class="cell-hora-extra"><span>${hora}</span><button type="button" class="btn-del-linha" onclick="removerLinhaExtraDireta(this)">✖</button></div></td>
                                     <td><input type="number"></td>
                                     <td><input type="number" step="0.1"></td>
@@ -469,882 +508,1008 @@ function carregarDadosDoDia(dataChave) {
                                         </select>
                                     </td>
                                 `;
-                            }
+              }
 
-                            const linhasExistentes = Array.from(tbody.querySelectorAll('tr'));
-                            let inserido = false;
-                            for (let tr of linhasExistentes) {
-                                const horaTr = tr.getAttribute('data-hora') || tr.querySelector('.time-col')?.textContent.trim();
-                                if (horaTr && hora < horaTr) {
-                                    tbody.insertBefore(novaLinha, tr);
-                                    inserido = true;
-                                    break;
-                                }
-                            }
-                            if (!inserido) tbody.appendChild(novaLinha);
-                            linha = novaLinha;
-                        }
-                    } else {
-                        linha = Array.from(tbody.querySelectorAll('tr:not(.linha-horario-extra)')).find(tr => {
-                            const horaTr = tr.getAttribute('data-hora') || tr.querySelector('.time-col')?.textContent.trim();
-                            return horaTr === hora;
-                        });
-                    }
+              const linhasExistentes = Array.from(tbody.querySelectorAll("tr"));
+              let inserido = false;
+              for (let tr of linhasExistentes) {
+                const horaTr =
+                  tr.getAttribute("data-hora") ||
+                  tr.querySelector(".time-col")?.textContent.trim();
+                if (horaTr && hora < horaTr) {
+                  tbody.insertBefore(novaLinha, tr);
+                  inserido = true;
+                  break;
+                }
+              }
+              if (!inserido) tbody.appendChild(novaLinha);
+              linha = novaLinha;
+            }
+          } else {
+            linha = Array.from(
+              tbody.querySelectorAll("tr:not(.linha-horario-extra)"),
+            ).find((tr) => {
+              const horaTr =
+                tr.getAttribute("data-hora") ||
+                tr.querySelector(".time-col")?.textContent.trim();
+              return horaTr === hora;
+            });
+          }
 
-                    if (linha) {
-                        const elementos = linha.querySelectorAll('input, select');
-                        valores.forEach((val, i) => {
-                            if (elementos[i]) elementos[i].value = val;
-                        });
-
-                        if (p.setor === 'enf-pediatria') {
-                            atualizarLinhaPews(linha);
-                        } else {
-                            atualizarLinhaClinica(linha);
-                        }
-                    }
-                });
+          if (linha) {
+            const elementos = linha.querySelectorAll("input, select");
+            valores.forEach((val, i) => {
+              if (elementos[i]) elementos[i].value = val;
             });
 
-            atualizarPainelCentral();
-        })
-        .catch(err => console.error("Erro ao carregar dados do servidor:", err));
+            if (p.setor === "enf-pediatria") {
+              atualizarLinhaPews(linha);
+            } else {
+              atualizarLinhaClinica(linha);
+            }
+          }
+        });
+      });
+
+      atualizarPainelCentral();
+    })
+    .catch((err) => console.error("Erro ao carregar dados do servidor:", err));
 }
 
 // --- INICIAR NOVO PLANTÃO ---
 function iniciarNovoPlantao() {
-    const agora = new Date();
-    const horaAtual = agora.getHours();
-    const minutoAtual = agora.getMinutes();
+  const agora = new Date();
+  const horaAtual = agora.getHours();
+  const minutoAtual = agora.getMinutes();
 
-    if (horaAtual < 7 || horaAtual >= 12) {
-        alert(
-            `🚫 AÇÃO NÃO PERMITIDA!\n\n` +
-            `Horário atual: ${String(horaAtual).padStart(2, '0')}:${String(minutoAtual).padStart(2, '0')}h.\n` +
-            `O novo plantão só pode ser iniciado entre as 07:00h e as 11:59h da manhã.`
-        );
-        return;
-    }
+  if (horaAtual < 7 || horaAtual >= 12) {
+    alert(
+      `🚫 AÇÃO NÃO PERMITIDA!\n\n` +
+        `Horário atual: ${String(horaAtual).padStart(2, "0")}:${String(minutoAtual).padStart(2, "0")}h.\n` +
+        `O novo plantão só pode ser iniciado entre as 07:00h e as 11:59h da manhã.`,
+    );
+    return;
+  }
 
-    if (!confirm("ATENÇÃO: Deseja iniciar o novo plantão das 07h? Isso manterá os pacientes internados nos leitos e limpará as tabelas para a nova jornada.")) {
-        return;
-    }
+  if (
+    !confirm(
+      "ATENÇÃO: Deseja iniciar o novo plantão das 07h? Isso manterá os pacientes internados nos leitos e limpará as tabelas para a nova jornada.",
+    )
+  ) {
+    return;
+  }
 
-    salvarDadosDoDia(dataSelecionadaStr);
+  salvarDadosDoDia(dataSelecionadaStr);
 
-    fetch(`/api/plantao/${dataSelecionadaStr}`)
-        .then(res => res.json())
-        .then(data => {
-            const pacientesParaMigrar = data.plantao ? (Array.isArray(data.plantao) ? data.plantao : JSON.parse(data.plantao)) : [];
+  fetch(`/api/plantao/${dataSelecionadaStr}`)
+    .then((res) => res.json())
+    .then((data) => {
+      const pacientesParaMigrar = data.plantao
+        ? Array.isArray(data.plantao)
+          ? data.plantao
+          : JSON.parse(data.plantao)
+        : [];
 
-            dataSelecionadaStr = formatarDataChave(agora);
-            mesExibido = agora.getMonth();
-            anoExibido = agora.getFullYear();
-            
-            renderizarCalendario();
+      dataSelecionadaStr = formatarDataChave(agora);
+      mesExibido = agora.getMonth();
+      anoExibido = agora.getFullYear();
 
-            if (pacientesParaMigrar.length > 0) {
-                const novosDados = pacientesParaMigrar.map(p => ({
-                    ...p,
-                    vitais: p.vitais.map(v => {
-                        const inputs = Array.isArray(v) ? v : v.inputs;
-                        return {
-                            hora: v.hora || "",
-                            isExtra: v.isExtra || false,
-                            inputs: inputs.map(() => "")
-                        };
-                    })
-                }));
+      renderizarCalendario();
 
-                fetch(`/api/plantao/${dataSelecionadaStr}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        plantao: novosDados,
-                        saidas: contadoresSaidas,
-                        indicadores: indicadoresMensais
-                    })
-                }).then(() => {
-                    carregarDadosDoDia(dataSelecionadaStr);
-                });
-            } else {
-                carregarDadosDoDia(dataSelecionadaStr);
-            }
+      if (pacientesParaMigrar.length > 0) {
+        const novosDados = pacientesParaMigrar.map((p) => ({
+          ...p,
+          vitais: p.vitais.map((v) => {
+            const inputs = Array.isArray(v) ? v : v.inputs;
+            return {
+              hora: v.hora || "",
+              isExtra: v.isExtra || false,
+              inputs: inputs.map(() => ""),
+            };
+          }),
+        }));
 
-            alert(`Novo Plantão das 07h iniciado com sucesso para o dia ${agora.toLocaleDateString('pt-BR')}!`);
+        fetch(`/api/plantao/${dataSelecionadaStr}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            plantao: novosDados,
+            saidas: contadoresSaidas,
+            indicadores: indicadoresMensais,
+          }),
+        }).then(() => {
+          carregarDadosDoDia(dataSelecionadaStr);
         });
+      } else {
+        carregarDadosDoDia(dataSelecionadaStr);
+      }
+
+      alert(
+        `Novo Plantão das 07h iniciado com sucesso para o dia ${agora.toLocaleDateString("pt-BR")}!`,
+      );
+    });
 }
 
 // --- ESCALA E CÁLCULO DE SINAIS VITAIS ---
 function tratarMudancaVitais(event) {
-    const elemento = event.target;
+  const elemento = event.target;
 
-    if (elemento.classList.contains('dtnasc-input')) {
-        atualizarBadgeIdade(elemento);
+  if (elemento.classList.contains("dtnasc-input")) {
+    atualizarBadgeIdade(elemento);
+  }
+
+  if (
+    elemento.classList.contains("nome-input") ||
+    elemento.classList.contains("isento-relatorio") ||
+    elemento.classList.contains("dtnasc-input")
+  ) {
+    const card = elemento.closest(".patient-card");
+    if (card && card.closest(".tab-pane")?.id === "enf-pediatria") {
+      card
+        .querySelectorAll(".vitals-table tbody tr")
+        .forEach((tr) => atualizarLinhaPews(tr));
     }
-
-    if (elemento.classList.contains('nome-input') || elemento.classList.contains('isento-relatorio') || elemento.classList.contains('dtnasc-input')) {
-        const card = elemento.closest('.patient-card');
-        if (card && card.closest('.tab-pane')?.id === 'enf-pediatria') {
-            card.querySelectorAll('.vitals-table tbody tr').forEach(tr => atualizarLinhaPews(tr));
-        }
-        atualizarPainelCentral();
-        salvarDadosDoDia(dataSelecionadaStr);
-        return;
-    }
-
-    const linha = elemento.closest("tr");
-    if (!linha || !linha.closest(".vitals-table")) return;
-
-    const abaPai = linha.closest('.tab-pane');
-    if (abaPai && abaPai.id === 'enf-pediatria') {
-        atualizarLinhaPews(linha);
-    } else {
-        atualizarLinhaClinica(linha);
-    }
-
     atualizarPainelCentral();
     salvarDadosDoDia(dataSelecionadaStr);
+    return;
+  }
+
+  const linha = elemento.closest("tr");
+  if (!linha || !linha.closest(".vitals-table")) return;
+
+  const abaPai = linha.closest(".tab-pane");
+  if (abaPai && abaPai.id === "enf-pediatria") {
+    atualizarLinhaPews(linha);
+  } else {
+    atualizarLinhaClinica(linha);
+  }
+
+  atualizarPainelCentral();
+  salvarDadosDoDia(dataSelecionadaStr);
 }
 
 // --- HELPER PARA IDENTIFICAR FAIXA ETÁRIA EXATA CONFORME FOTO DO POP ---
 function obterFaixaEtariaPews(dataNascStr) {
-    if (!dataNascStr) return "1-3 anos";
+  if (!dataNascStr) return "1-3 anos";
 
-    const nasc = new Date(dataNascStr);
-    const hoje = new Date();
-    
-    let anos = hoje.getFullYear() - nasc.getFullYear();
-    let meses = (hoje.getFullYear() - nasc.getFullYear()) * 12 + (hoje.getMonth() - nasc.getMonth());
-    let dias = hoje.getDate() - nasc.getDate();
-    if (dias < 0) meses--;
+  const nasc = new Date(dataNascStr);
+  const hoje = new Date();
 
-    if (meses < 3) return "< 3 meses";
-    if (meses < 12 || (meses === 12 && dias === 0)) return "3 meses a 11m29d";
-    if (anos >= 1 && anos <= 3) return "1-3 anos";
-    if (anos >= 4 && anos <= 7) return "4-7 anos";
-    if (anos >= 8 && anos <= 12) return "8-12 anos";
-    return "> 12 anos";
+  let anos = hoje.getFullYear() - nasc.getFullYear();
+  let meses =
+    (hoje.getFullYear() - nasc.getFullYear()) * 12 +
+    (hoje.getMonth() - nasc.getMonth());
+  let dias = hoje.getDate() - nasc.getDate();
+  if (dias < 0) meses--;
+
+  if (meses < 3) return "< 3 meses";
+  if (meses < 12 || (meses === 12 && dias === 0)) return "3 meses a 11m29d";
+  if (anos >= 1 && anos <= 3) return "1-3 anos";
+  if (anos >= 4 && anos <= 7) return "4-7 anos";
+  if (anos >= 8 && anos <= 12) return "8-12 anos";
+  return "> 12 anos";
 }
 
 // --- CÁLCULO DE PEWS (ATUALIZADO CONFORME TABELA OFICIAL) ---
 function atualizarLinhaPews(linha) {
-    const card = linha.closest('.patient-card');
-    const dtNasc = card ? card.querySelector('.dtnasc-input')?.value : "";
-    const faixaEtaria = obterFaixaEtariaPews(dtNasc);
+  const card = linha.closest(".patient-card");
+  const dtNasc = card ? card.querySelector(".dtnasc-input")?.value : "";
+  const faixaEtaria = obterFaixaEtariaPews(dtNasc);
 
-    const fc = parseFloat(linha.querySelector('.pews-fc')?.value) || 0;
-    const fr = parseFloat(linha.querySelector('.pews-fr')?.value) || 0;
-    const comp = parseInt(linha.querySelector('.pews-comp')?.value || 0);
-    const vomitos = parseInt(linha.querySelector('.pews-vomitos')?.value || 0);
-    const nebulizador = parseInt(linha.querySelector('.pews-nebulizador')?.value || 0);
-    const temp = parseFloat(String(linha.querySelector('.pews-temp')?.value || '').replace(',', '.')) || 0;
+  const fc = parseFloat(linha.querySelector(".pews-fc")?.value) || 0;
+  const fr = parseFloat(linha.querySelector(".pews-fr")?.value) || 0;
+  const comp = parseInt(linha.querySelector(".pews-comp")?.value || 0);
+  const vomitos = parseInt(linha.querySelector(".pews-vomitos")?.value || 0);
+  const nebulizador = parseInt(
+    linha.querySelector(".pews-nebulizador")?.value || 0,
+  );
+  const temp =
+    parseFloat(
+      String(linha.querySelector(".pews-temp")?.value || "").replace(",", "."),
+    ) || 0;
 
-    let pFC = 0;
-    let pFR = 0;
-    let pTemp = 0;
+  let pFC = 0;
+  let pFR = 0;
+  let pTemp = 0;
 
-    if (fc > 0) {
-        if (faixaEtaria === "< 3 meses") {
-            if (fc <= 89) pFC = 3;
-            else if (fc >= 220) pFC = 3;
-            else if (fc >= 180 && fc <= 219) pFC = 2;
-            else if (fc >= 160 && fc <= 179) pFC = 1;
-            else if (fc >= 90 && fc <= 159) pFC = 0;
-        } else if (faixaEtaria === "3 meses a 11m29d") {
-            if (fc <= 89) pFC = 3;
-            else if (fc >= 210) pFC = 3;
-            else if (fc >= 170 && fc <= 209) pFC = 2;
-            else if (fc >= 160 && fc <= 169) pFC = 1;
-            else if (fc >= 90 && fc <= 159) pFC = 0;
-        } else if (faixaEtaria === "1-3 anos") {
-            if (fc <= 89) pFC = 3;
-            else if (fc >= 200) pFC = 3;
-            else if (fc >= 160 && fc <= 199) pFC = 2;
-            else if (fc >= 140 && fc <= 159) pFC = 1;
-            else if (fc >= 90 && fc <= 139) pFC = 0;
-        } else if (faixaEtaria === "4-7 anos") {
-            if (fc <= 60) pFC = 3;
-            else if (fc >= 190) pFC = 3;
-            else if (fc >= 150 && fc <= 189) pFC = 2;
-            else if (fc >= 111 && fc <= 149) pFC = 1;
-            else if (fc >= 70 && fc <= 110) pFC = 0;
-            else if (fc >= 61 && fc <= 69) pFC = 1;
-        } else {
-            if (fc <= 60) pFC = 3;
-            else if (fc >= 170) pFC = 3;
-            else if (fc >= 130 && fc <= 169) pFC = 2;
-            else if (fc >= 101 && fc <= 129) pFC = 1;
-            else if (fc >= 66 && fc <= 100) pFC = 0;
-            else if (fc >= 60 && fc <= 65) pFC = 1;
-        }
-    }
-
-    if (fr > 0) {
-        if (faixaEtaria === "< 3 meses") {
-            if (fr <= 25) pFR = 3;
-            else if (fr >= 90) pFR = 3;
-            else if (fr >= 79 && fr <= 89) pFR = 2;
-            else if (fr >= 60 && fr <= 78) pFR = 1;
-            else if (fr >= 30 && fr <= 59) pFR = 0;
-            else if (fr >= 26 && fr <= 29) pFR = 1;
-        } else if (faixaEtaria === "3 meses a 11m29d") {
-            if (fr <= 20) pFR = 3;
-            else if (fr >= 80) pFR = 3;
-            else if (fr >= 69 && fr <= 79) pFR = 2;
-            else if (fr >= 54 && fr <= 68) pFR = 1;
-            else if (fr >= 30 && fr <= 53) pFR = 0;
-            else if (fr >= 21 && fr <= 29) pFR = 1;
-        } else if (faixaEtaria === "1-3 anos") {
-            if (fr <= 15) pFR = 3;
-            else if (fr >= 70) pFR = 3;
-            else if (fr >= 59 && fr <= 69) pFR = 2;
-            else if (fr >= 40 && fr <= 58) pFR = 1;
-            else if (fr >= 20 && fr <= 39) pFR = 0;
-            else if (fr >= 16 && fr <= 19) pFR = 1;
-        } else if (faixaEtaria === "4-7 anos") {
-            if (fr <= 15) pFR = 3;
-            else if (fr >= 60) pFR = 3;
-            else if (fr >= 49 && fr <= 59) pFR = 2;
-            else if (fr >= 30 && fr <= 48) pFR = 1;
-            else if (fr >= 20 && fr <= 29) pFR = 0;
-            else if (fr >= 16 && fr <= 19) pFR = 1;
-        } else {
-            if (fr <= 10) pFR = 3;
-            else if (fr >= 50) pFR = 3;
-            else if (fr >= 39 && fr <= 49) pFR = 2;
-            else if (fr >= 26 && fr <= 38) pFR = 1;
-            else if (fr >= 18 && fr <= 25) pFR = 0;
-            else if (fr >= 11 && fr <= 17) pFR = 1;
-        }
-    }
-
-    if (linha.querySelector('.pews-temp')?.value !== "") {
-        if (temp < 35) pTemp = 3;
-        else if (temp >= 40) pTemp = 3;
-        else if (temp >= 39.1 && temp <= 39.9) pTemp = 2;
-        else if (temp >= 38.1 && temp <= 39.0) pTemp = 1;
-        else if (temp >= 36.1 && temp <= 38.0) pTemp = 0;
-        else if (temp >= 35.1 && temp <= 36.0) pTemp = 1;
-    }
-
-    const pNews = linha.querySelector('.news-input');
-    const tdStatus = linha.querySelector('.status-cell');
-
-    const totalPews = pFC + pFR + comp + vomitos + nebulizador + pTemp;
-    pNews.value = totalPews;
-
-    if (totalPews <= 1) {
-        pNews.style.backgroundColor = "#e6ffe6"; pNews.style.color = "#28a745";
-        tdStatus.innerHTML = `<span class="status-badge status-estavel">🟢 ESCORE ${totalPews} (SEM RISCO): Reavaliar a cada 4h / Seguir Plano Terapêutico</span>`;
-    } else if (totalPews === 2) {
-        pNews.style.backgroundColor = "#fff3cd"; pNews.style.color = "#856404";
-        tdStatus.innerHTML = `<span class="status-badge" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">🟡 ESCORE 2 (BAIXO RISCO): Solicitar avaliação do Enfermeiro (Reavaliar em 3h)</span>`;
-    } else if (totalPews >= 3 && totalPews <= 4) {
-        pNews.style.backgroundColor = "#ffe8cc"; pNews.style.color = "#d97706";
-        tdStatus.innerHTML = `<span class="status-badge" style="background:#ffe8cc; color:#d97706; border:1px solid #fbd38d;">🟠 ESCORE ${totalPews} (MÉDIO RISCO): Avaliação do pediatra em 30 min (Reavaliar em 1h)</span>`;
+  if (fc > 0) {
+    if (faixaEtaria === "< 3 meses") {
+      if (fc <= 89) pFC = 3;
+      else if (fc >= 220) pFC = 3;
+      else if (fc >= 180 && fc <= 219) pFC = 2;
+      else if (fc >= 160 && fc <= 179) pFC = 1;
+      else if (fc >= 90 && fc <= 159) pFC = 0;
+    } else if (faixaEtaria === "3 meses a 11m29d") {
+      if (fc <= 89) pFC = 3;
+      else if (fc >= 210) pFC = 3;
+      else if (fc >= 170 && fc <= 209) pFC = 2;
+      else if (fc >= 160 && fc <= 169) pFC = 1;
+      else if (fc >= 90 && fc <= 159) pFC = 0;
+    } else if (faixaEtaria === "1-3 anos") {
+      if (fc <= 89) pFC = 3;
+      else if (fc >= 200) pFC = 3;
+      else if (fc >= 160 && fc <= 199) pFC = 2;
+      else if (fc >= 140 && fc <= 159) pFC = 1;
+      else if (fc >= 90 && fc <= 139) pFC = 0;
+    } else if (faixaEtaria === "4-7 anos") {
+      if (fc <= 60) pFC = 3;
+      else if (fc >= 190) pFC = 3;
+      else if (fc >= 150 && fc <= 189) pFC = 2;
+      else if (fc >= 111 && fc <= 149) pFC = 1;
+      else if (fc >= 70 && fc <= 110) pFC = 0;
+      else if (fc >= 61 && fc <= 69) pFC = 1;
     } else {
-        pNews.style.backgroundColor = "#ffe6e6"; pNews.style.color = "#dc3545";
-        tdStatus.innerHTML = `<span class="status-badge" style="background:#ffe6e6; color:#dc3545; border:1px solid #dc3545;">🚨 ESCORE ${totalPews} (ALTO RISCO): Acionar Enfermeiro/Médico imediato (Time de Resposta Rápida)</span>`;
+      if (fc <= 60) pFC = 3;
+      else if (fc >= 170) pFC = 3;
+      else if (fc >= 130 && fc <= 169) pFC = 2;
+      else if (fc >= 101 && fc <= 129) pFC = 1;
+      else if (fc >= 66 && fc <= 100) pFC = 0;
+      else if (fc >= 60 && fc <= 65) pFC = 1;
     }
+  }
+
+  if (fr > 0) {
+    if (faixaEtaria === "< 3 meses") {
+      if (fr <= 25) pFR = 3;
+      else if (fr >= 90) pFR = 3;
+      else if (fr >= 79 && fr <= 89) pFR = 2;
+      else if (fr >= 60 && fr <= 78) pFR = 1;
+      else if (fr >= 30 && fr <= 59) pFR = 0;
+      else if (fr >= 26 && fr <= 29) pFR = 1;
+    } else if (faixaEtaria === "3 meses a 11m29d") {
+      if (fr <= 20) pFR = 3;
+      else if (fr >= 80) pFR = 3;
+      else if (fr >= 69 && fr <= 79) pFR = 2;
+      else if (fr >= 54 && fr <= 68) pFR = 1;
+      else if (fr >= 30 && fr <= 53) pFR = 0;
+      else if (fr >= 21 && fr <= 29) pFR = 1;
+    } else if (faixaEtaria === "1-3 anos") {
+      if (fr <= 15) pFR = 3;
+      else if (fr >= 70) pFR = 3;
+      else if (fr >= 59 && fr <= 69) pFR = 2;
+      else if (fr >= 40 && fr <= 58) pFR = 1;
+      else if (fr >= 20 && fr <= 39) pFR = 0;
+      else if (fr >= 16 && fr <= 19) pFR = 1;
+    } else if (faixaEtaria === "4-7 anos") {
+      if (fr <= 15) pFR = 3;
+      else if (fr >= 60) pFR = 3;
+      else if (fr >= 49 && fr <= 59) pFR = 2;
+      else if (fr >= 30 && fr <= 48) pFR = 1;
+      else if (fr >= 20 && fr <= 29) pFR = 0;
+      else if (fr >= 16 && fr <= 19) pFR = 1;
+    } else {
+      if (fr <= 10) pFR = 3;
+      else if (fr >= 50) pFR = 3;
+      else if (fr >= 39 && fr <= 49) pFR = 2;
+      else if (fr >= 26 && fr <= 38) pFR = 1;
+      else if (fr >= 18 && fr <= 25) pFR = 0;
+      else if (fr >= 11 && fr <= 17) pFR = 1;
+    }
+  }
+
+  if (linha.querySelector(".pews-temp")?.value !== "") {
+    if (temp < 35) pTemp = 3;
+    else if (temp >= 40) pTemp = 3;
+    else if (temp >= 39.1 && temp <= 39.9) pTemp = 2;
+    else if (temp >= 38.1 && temp <= 39.0) pTemp = 1;
+    else if (temp >= 36.1 && temp <= 38.0) pTemp = 0;
+    else if (temp >= 35.1 && temp <= 36.0) pTemp = 1;
+  }
+
+  const pNews = linha.querySelector(".news-input");
+  const tdStatus = linha.querySelector(".status-cell");
+
+  const totalPews = pFC + pFR + comp + vomitos + nebulizador + pTemp;
+  pNews.value = totalPews;
+
+  if (totalPews <= 1) {
+    pNews.style.backgroundColor = "#e6ffe6";
+    pNews.style.color = "#28a745";
+    tdStatus.innerHTML = `<span class="status-badge status-estavel">🟢 ESCORE ${totalPews} (SEM RISCO): Reavaliar a cada 4h / Seguir Plano Terapêutico</span>`;
+  } else if (totalPews === 2) {
+    pNews.style.backgroundColor = "#fff3cd";
+    pNews.style.color = "#856404";
+    tdStatus.innerHTML = `<span class="status-badge" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">🟡 ESCORE 2 (BAIXO RISCO): Solicitar avaliação do Enfermeiro (Reavaliar em 3h)</span>`;
+  } else if (totalPews >= 3 && totalPews <= 4) {
+    pNews.style.backgroundColor = "#ffe8cc";
+    pNews.style.color = "#d97706";
+    tdStatus.innerHTML = `<span class="status-badge" style="background:#ffe8cc; color:#d97706; border:1px solid #fbd38d;">🟠 ESCORE ${totalPews} (MÉDIO RISCO): Avaliação do pediatra em 30 min (Reavaliar em 1h)</span>`;
+  } else {
+    pNews.style.backgroundColor = "#ffe6e6";
+    pNews.style.color = "#dc3545";
+    tdStatus.innerHTML = `<span class="status-badge" style="background:#ffe6e6; color:#dc3545; border:1px solid #dc3545;">🚨 ESCORE ${totalPews} (ALTO RISCO): Acionar Enfermeiro/Médico imediato (Time de Resposta Rápida)</span>`;
+  }
 }
 
 // --- CÁLCULO DO NEWS2 / SEPSE (ADULTOS) ---
 function atualizarLinhaClinica(linha) {
-    const pPas = linha.querySelector('td:nth-child(2) input');
-    const pTemp = linha.querySelector('td:nth-child(3) input');
-    const pFr = linha.querySelector('td:nth-child(4) input');
-    const pFc = linha.querySelector('td:nth-child(5) input');
-    const pO2 = linha.querySelector('td:nth-child(6) select');
-    const pSat = linha.querySelector('td:nth-child(7) input');
-    const pConsc = linha.querySelector('td:nth-child(8) select');
-    const pNews = linha.querySelector('.news-input');
-    const tdStatus = linha.querySelector('.status-cell');
+  const pPas = linha.querySelector("td:nth-child(2) input");
+  const pTemp = linha.querySelector("td:nth-child(3) input");
+  const pFr = linha.querySelector("td:nth-child(4) input");
+  const pFc = linha.querySelector("td:nth-child(5) input");
+  const pO2 = linha.querySelector("td:nth-child(6) select");
+  const pSat = linha.querySelector("td:nth-child(7) input");
+  const pConsc = linha.querySelector("td:nth-child(8) select");
+  const pNews = linha.querySelector(".news-input");
+  const tdStatus = linha.querySelector(".status-cell");
 
-    removerDestaquesLaranja(linha);
+  removerDestaquesLaranja(linha);
 
-    const pas = parseFloat(pPas?.value) || 0;
-    const temp = parseFloat(String(pTemp?.value || '').replace(',', '.')) || 0;
-    const fr = parseFloat(pFr?.value) || 0;
-    const fc = parseFloat(pFc?.value) || 0;
-    const o2SimNao = pO2?.value ? pO2.value.toUpperCase() : "";
-    const sat = parseFloat(pSat?.value) || 0;
-    const consc = pConsc?.value ? pConsc.value.toUpperCase() : "";
+  const pas = parseFloat(pPas?.value) || 0;
+  const temp = parseFloat(String(pTemp?.value || "").replace(",", ".")) || 0;
+  const fr = parseFloat(pFr?.value) || 0;
+  const fc = parseFloat(pFc?.value) || 0;
+  const o2SimNao = pO2?.value ? pO2.value.toUpperCase() : "";
+  const sat = parseFloat(pSat?.value) || 0;
+  const consc = pConsc?.value ? pConsc.value.toUpperCase() : "";
 
-    const qtdPreenchida = [pPas?.value, pTemp?.value, pFr?.value, pFc?.value, pSat?.value, pO2?.value, pConsc?.value].filter(v => v !== "" && v !== undefined).length;
+  const qtdPreenchida = [
+    pPas?.value,
+    pTemp?.value,
+    pFr?.value,
+    pFc?.value,
+    pSat?.value,
+    pO2?.value,
+    pConsc?.value,
+  ].filter((v) => v !== "" && v !== undefined).length;
 
-    if (qtdPreenchida === 0) {
-        pNews.value = "";
-        pNews.style.backgroundColor = "transparent";
-        pNews.style.borderColor = "var(--borda)";
-        pNews.style.color = "";
-        tdStatus.innerHTML = "";
-        return;
-    }
+  if (qtdPreenchida === 0) {
+    pNews.value = "";
+    pNews.style.backgroundColor = "transparent";
+    pNews.style.borderColor = "var(--borda)";
+    pNews.style.color = "";
+    tdStatus.innerHTML = "";
+    return;
+  }
 
-    let score = 0;
-    if (pFr.value !== "") {
-        if (fr <= 8 || fr >= 25) score += 3;
-        else if (fr >= 21) score += 2;
-        else if (fr >= 9 && fr <= 11) score += 1;
-    }
+  let score = 0;
+  if (pFr.value !== "") {
+    if (fr <= 8 || fr >= 25) score += 3;
+    else if (fr >= 21) score += 2;
+    else if (fr >= 9 && fr <= 11) score += 1;
+  }
 
-    if (o2SimNao === "SIM") score += 2;
+  if (o2SimNao === "SIM") score += 2;
 
-    if (pSat.value !== "") {
-        if (sat <= 91) score += 3;
-        else if (sat <= 93) score += 2;
-        else if (sat <= 95) score += 1;
-    }
+  if (pSat.value !== "") {
+    if (sat <= 91) score += 3;
+    else if (sat <= 93) score += 2;
+    else if (sat <= 95) score += 1;
+  }
 
-    if (pPas.value !== "") {
-        if (pas < 90) { score += 3; destacarLaranja(pPas); }
-        else if (pas >= 220) score += 3;
-        else if ((pas >= 90 && pas <= 100) || (pas >= 200 && pas <= 219)) score += 2;
-        else if (pas <= 110) score += 1;
-    }
+  if (pPas.value !== "") {
+    if (pas < 90) {
+      score += 3;
+      destacarLaranja(pPas);
+    } else if (pas >= 220) score += 3;
+    else if ((pas >= 90 && pas <= 100) || (pas >= 200 && pas <= 219))
+      score += 2;
+    else if (pas <= 110) score += 1;
+  }
 
-    if (pFc.value !== "") {
-        if (fc <= 40 || fc >= 131) score += 3;
-        else if (fc >= 111) score += 2;
-        else if ((fc >= 41 && fc <= 50) || (fc >= 91 && fc <= 130)) score += 1;
-    }
+  if (pFc.value !== "") {
+    if (fc <= 40 || fc >= 131) score += 3;
+    else if (fc >= 111) score += 2;
+    else if ((fc >= 41 && fc <= 50) || (fc >= 91 && fc <= 130)) score += 1;
+  }
 
-    if (pTemp.value !== "") {
-        if (temp < 35) score += 3;
-        else if (temp >= 39.1) score += 2;
-        else if ((temp >= 35 && temp <= 36) || (temp >= 38.1 && temp <= 39)) score += 1;
-    }
+  if (pTemp.value !== "") {
+    if (temp < 35) score += 3;
+    else if (temp >= 39.1) score += 2;
+    else if ((temp >= 35 && temp <= 36) || (temp >= 38.1 && temp <= 39))
+      score += 1;
+  }
 
-    let pConscVal = 0;
-    if (consc === "VOZ, DOR OU NÃO REAGE") {
-        pConscVal = 3;
-        destacarLaranja(pConsc);
-    } else if (consc === "AGITADO/CONFUSO") {
-        pConscVal = 2;
-    }
-    score += pConscVal;
+  let pConscVal = 0;
+  if (consc === "VOZ, DOR OU NÃO REAGE") {
+    pConscVal = 3;
+    destacarLaranja(pConsc);
+  } else if (consc === "AGITADO/CONFUSO") {
+    pConscVal = 2;
+  }
+  score += pConscVal;
 
-    pNews.value = score;
+  pNews.value = score;
 
-    if (score === 0) {
-        pNews.style.backgroundColor = "#e6ffe6"; pNews.style.color = "#28a745";
-    } else if (score <= 3) {
-        pNews.style.backgroundColor = "#e6ffe6"; pNews.style.color = "#28a745";
-    } else if (score <= 5) {
-        pNews.style.backgroundColor = "#fff3cd"; pNews.style.color = "#856404";
-    } else {
-        pNews.style.backgroundColor = "#ffe6e6"; pNews.style.color = "#dc3545";
-    }
+  if (score === 0) {
+    pNews.style.backgroundColor = "#e6ffe6";
+    pNews.style.color = "#28a745";
+  } else if (score <= 3) {
+    pNews.style.backgroundColor = "#e6ffe6";
+    pNews.style.color = "#28a745";
+  } else if (score <= 5) {
+    pNews.style.backgroundColor = "#fff3cd";
+    pNews.style.color = "#856404";
+  } else {
+    pNews.style.backgroundColor = "#ffe6e6";
+    pNews.style.color = "#dc3545";
+  }
 
-    let sirsCount = 0;
-    if (pFc.value && fc > 90) { sirsCount++; destacarLaranja(pFc); }
-    if (pFr.value && fr > 20) { sirsCount++; destacarLaranja(pFr); }
-    if (pTemp.value && (temp > 38.3 || (temp > 0 && temp < 35))) { sirsCount++; destacarLaranja(pTemp); }
+  let sirsCount = 0;
+  if (pFc.value && fc > 90) {
+    sirsCount++;
+    destacarLaranja(pFc);
+  }
+  if (pFr.value && fr > 20) {
+    sirsCount++;
+    destacarLaranja(pFr);
+  }
+  if (pTemp.value && (temp > 38.3 || (temp > 0 && temp < 35))) {
+    sirsCount++;
+    destacarLaranja(pTemp);
+  }
 
-    let sepseSat = (sat > 0 && ((sat < 90 && o2SimNao !== "SIM") || (sat < 94 && o2SimNao === "SIM")));
-    if (sepseSat) destacarLaranja(pSat);
+  let sepseSat =
+    sat > 0 &&
+    ((sat < 90 && o2SimNao !== "SIM") || (sat < 94 && o2SimNao === "SIM"));
+  if (sepseSat) destacarLaranja(pSat);
 
-    const isAlertaSepse = (sirsCount >= 2 || pConscVal >= 3 || (pas > 0 && pas < 90) || sepseSat);
+  const isAlertaSepse =
+    sirsCount >= 2 || pConscVal >= 3 || (pas > 0 && pas < 90) || sepseSat;
 
-    if (isAlertaSepse) {
-        tdStatus.innerHTML = `<span class="status-badge" style="background:#ffe6e6; color:#dc3545; border:1px solid #dc3545;">🚨 ALERTA SEPSE</span>`;
-    } else if (score >= 6) {
-        tdStatus.innerHTML = `<span class="status-badge" style="background:#ffe6e6; color:#dc3545; border:1px solid #dc3545;">🚨 ALTO RISCO</span>`;
-    } else if (score >= 4) {
-        tdStatus.innerHTML = `<span class="status-badge" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">🟡 MÉDIO RISCO</span>`;
-    } else if (score >= 1) {
-        tdStatus.innerHTML = `<span class="status-badge" style="background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb;">🟢 BAIXO RISCO</span>`;
-    } else {
-        tdStatus.innerHTML = `<span class="status-badge status-estavel">✔️ ESTÁVEL</span>`;
-    }
+  if (isAlertaSepse) {
+    tdStatus.innerHTML = `<span class="status-badge" style="background:#ffe6e6; color:#dc3545; border:1px solid #dc3545;">🚨 ALERTA SEPSE</span>`;
+  } else if (score >= 6) {
+    tdStatus.innerHTML = `<span class="status-badge" style="background:#ffe6e6; color:#dc3545; border:1px solid #dc3545;">🚨 ALTO RISCO</span>`;
+  } else if (score >= 4) {
+    tdStatus.innerHTML = `<span class="status-badge" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">🟡 MÉDIO RISCO</span>`;
+  } else if (score >= 1) {
+    tdStatus.innerHTML = `<span class="status-badge" style="background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb;">🟢 BAIXO RISCO</span>`;
+  } else {
+    tdStatus.innerHTML = `<span class="status-badge status-estavel">✔️ ESTÁVEL</span>`;
+  }
 }
 
 function destacarLaranja(el) {
-    if (!el) return;
-    el.style.border = "2px solid #ff9933";
-    el.style.backgroundColor = "rgba(255, 153, 51, 0.08)";
+  if (!el) return;
+  el.style.border = "2px solid #ff9933";
+  el.style.backgroundColor = "rgba(255, 153, 51, 0.08)";
 }
 
 function removerDestaquesLaranja(linha) {
-    linha.querySelectorAll('input, select').forEach(input => {
-        if (!input.classList.contains('news-input')) {
-            input.style.border = "";
-            input.style.backgroundColor = "";
-        }
-    });
+  linha.querySelectorAll("input, select").forEach((input) => {
+    if (!input.classList.contains("news-input")) {
+      input.style.border = "";
+      input.style.backgroundColor = "";
+    }
+  });
 }
 
 // --- NAVEGAÇÃO DE SETORES & BUSCA ---
 function mudarSetor(idSetor) {
-    const campoBusca = document.getElementById('filtro-global');
-    if (!campoBusca || campoBusca.value.trim() === "") {
-        setorAtivoAntesDaBusca = idSetor;
+  const campoBusca = document.getElementById("filtro-global");
+  if (!campoBusca || campoBusca.value.trim() === "") {
+    setorAtivoAntesDaBusca = idSetor;
+  }
+
+  if (campoBusca) campoBusca.value = "";
+
+  const barraFiltro = document.getElementById("barra-filtro-global");
+  if (barraFiltro) {
+    barraFiltro.style.display = idSetor === "painel-central" ? "none" : "flex";
+  }
+
+  document
+    .querySelectorAll(".btn-add-wrapper")
+    .forEach((btn) => (btn.style.display = "flex"));
+
+  document.querySelectorAll(".tab-pane").forEach((aba) => {
+    aba.classList.remove("active");
+    aba.style.display = "";
+  });
+
+  document
+    .querySelectorAll(".sidebar li")
+    .forEach((li) => li.classList.remove("active"));
+
+  const abaAlvo = document.getElementById(idSetor);
+  if (abaAlvo) {
+    abaAlvo.classList.add("active");
+    abaAlvo.style.display = "block";
+  }
+
+  document.querySelectorAll(".sidebar li").forEach((li) => {
+    if (
+      li.getAttribute("onclick") &&
+      li.getAttribute("onclick").includes(idSetor)
+    ) {
+      li.classList.add("active");
     }
-
-    if (campoBusca) campoBusca.value = "";
-
-    const barraFiltro = document.getElementById('barra-filtro-global');
-    if (barraFiltro) {
-        barraFiltro.style.display = (idSetor === 'painel-central') ? 'none' : 'flex';
-    }
-
-    document.querySelectorAll('.btn-add-wrapper').forEach(btn => btn.style.display = 'flex');
-
-    document.querySelectorAll('.tab-pane').forEach(aba => {
-        aba.classList.remove('active');
-        aba.style.display = '';
-    });
-
-    document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
-
-    const abaAlvo = document.getElementById(idSetor);
-    if (abaAlvo) {
-        abaAlvo.classList.add('active');
-        abaAlvo.style.display = 'block';
-    }
-
-    document.querySelectorAll('.sidebar li').forEach(li => {
-        if (li.getAttribute('onclick') && li.getAttribute('onclick').includes(idSetor)) {
-            li.classList.add('active');
-        }
-    });
+  });
 }
 
 function executarBuscaGlobal() {
-    const tipoFiltro = document.getElementById('tipo-busca').value;
-    const termoFiltro = document.getElementById('filtro-global').value.toLowerCase().trim();
+  const tipoFiltro = document.getElementById("tipo-busca").value;
+  const termoFiltro = document
+    .getElementById("filtro-global")
+    .value.toLowerCase()
+    .trim();
 
-    const painelCentral = document.getElementById('painel-central');
-    const todosOsCards = document.querySelectorAll('.patient-card');
-    const todosBotoesAdd = document.querySelectorAll('.btn-add-wrapper');
-    const todasAbasEnfermaria = document.querySelectorAll('.tab-pane:not(#painel-central)');
+  const painelCentral = document.getElementById("painel-central");
+  const todosOsCards = document.querySelectorAll(".patient-card");
+  const todosBotoesAdd = document.querySelectorAll(".btn-add-wrapper");
+  const todasAbasEnfermaria = document.querySelectorAll(
+    ".tab-pane:not(#painel-central)",
+  );
 
-    if (termoFiltro === "") {
-        todosBotoesAdd.forEach(btn => btn.style.display = 'flex');
-        todosOsCards.forEach(card => card.style.display = 'block');
-        mudarSetor(setorAtivoAntesDaBusca);
-        return;
-    }
+  if (termoFiltro === "") {
+    todosBotoesAdd.forEach((btn) => (btn.style.display = "flex"));
+    todosOsCards.forEach((card) => (card.style.display = "block"));
+    mudarSetor(setorAtivoAntesDaBusca);
+    return;
+  }
 
-    todosBotoesAdd.forEach(btn => btn.style.display = 'none');
+  todosBotoesAdd.forEach((btn) => (btn.style.display = "none"));
 
-    if (painelCentral) {
-        painelCentral.classList.remove('active');
-        painelCentral.style.display = 'none';
-    }
+  if (painelCentral) {
+    painelCentral.classList.remove("active");
+    painelCentral.style.display = "none";
+  }
 
-    todasAbasEnfermaria.forEach(aba => {
-        let encontrouNaAba = false;
-        const cardsDaAba = aba.querySelectorAll('.patient-card');
+  todasAbasEnfermaria.forEach((aba) => {
+    let encontrouNaAba = false;
+    const cardsDaAba = aba.querySelectorAll(".patient-card");
 
-        cardsDaAba.forEach(card => {
-            const inputNome = card.querySelector('.nome-input');
-            const inputTec = card.querySelector('.tec-input');
+    cardsDaAba.forEach((card) => {
+      const inputNome = card.querySelector(".nome-input");
+      const inputTec = card.querySelector(".tec-input");
 
-            const valorNome = inputNome ? inputNome.value.toLowerCase().trim() : "";
-            const valorTec = inputTec ? inputTec.value.toLowerCase().trim() : "";
+      const valorNome = inputNome ? inputNome.value.toLowerCase().trim() : "";
+      const valorTec = inputTec ? inputTec.value.toLowerCase().trim() : "";
 
-            let exibir = false;
-            if (tipoFiltro === "paciente" && valorNome.includes(termoFiltro)) exibir = true;
-            if (tipoFiltro === "tecnico" && valorTec.includes(termoFiltro)) exibir = true;
+      let exibir = false;
+      if (tipoFiltro === "paciente" && valorNome.includes(termoFiltro))
+        exibir = true;
+      if (tipoFiltro === "tecnico" && valorTec.includes(termoFiltro))
+        exibir = true;
 
-            if (exibir) {
-                card.style.display = 'block';
-                encontrouNaAba = true;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-
-        if (encontrouNaAba) {
-            aba.classList.add('active');
-            aba.style.display = 'block';
-        } else {
-            aba.classList.remove('active');
-            aba.style.display = 'none';
-        }
+      if (exibir) {
+        card.style.display = "block";
+        encontrouNaAba = true;
+      } else {
+        card.style.display = "none";
+      }
     });
+
+    if (encontrouNaAba) {
+      aba.classList.add("active");
+      aba.style.display = "block";
+    } else {
+      aba.classList.remove("active");
+      aba.style.display = "none";
+    }
+  });
 }
 
 // --- GESTÃO DE LEITOS, ALTAS E ÓBITOS ---
 function adicionarPaciente(botaoAdicionar) {
-    const abaAtual = botaoAdicionar.closest('.tab-pane');
-    if (!abaAtual) return;
+  const abaAtual = botaoAdicionar.closest(".tab-pane");
+  if (!abaAtual) return;
 
-    const container = abaAtual.querySelector('.patients-container');
-    if (!container) return;
+  const container = abaAtual.querySelector(".patients-container");
+  if (!container) return;
 
-    const cardGabarito = container.querySelector('.patient-card');
-    if (!cardGabarito) return;
+  const cardGabarito = container.querySelector(".patient-card");
+  if (!cardGabarito) return;
 
-    const novoCard = cardGabarito.cloneNode(true);
-    limparCardPaciente(novoCard);
-    novoCard.style.display = 'block';
+  const novoCard = cardGabarito.cloneNode(true);
+  limparCardPaciente(novoCard);
+  novoCard.style.display = "block";
 
-    container.appendChild(novoCard);
-    atualizarPainelCentral();
-    salvarDadosDoDia(dataSelecionadaStr);
+  container.appendChild(novoCard);
+  atualizarPainelCentral();
+  salvarDadosDoDia(dataSelecionadaStr);
 }
 
 function removerCardPaciente(botaoExcluir) {
-    const card = botaoExcluir.closest('.patient-card');
-    if (!card) return;
+  const card = botaoExcluir.closest(".patient-card");
+  if (!card) return;
 
-    const container = card.parentElement;
-    
-    if (container.querySelectorAll('.patient-card').length > 1) {
-        if (confirm("Deseja realmente remover este card de paciente criado por engano?")) {
-            card.remove();
-            atualizarPainelCentral();
-            salvarDadosDoDia(dataSelecionadaStr);
-        }
-    } else {
-        if (confirm("Este é o único leito do setor. Deseja apenas limpar os dados dele?")) {
-            limparCardPaciente(card);
-            atualizarPainelCentral();
-            salvarDadosDoDia(dataSelecionadaStr);
-        }
+  const container = card.parentElement;
+
+  if (container.querySelectorAll(".patient-card").length > 1) {
+    if (
+      confirm(
+        "Deseja realmente remover este card de paciente criado por engano?",
+      )
+    ) {
+      card.remove();
+      atualizarPainelCentral();
+      salvarDadosDoDia(dataSelecionadaStr);
     }
+  } else {
+    if (
+      confirm(
+        "Este é o único leito do setor. Deseja apenas limpar os dados dele?",
+      )
+    ) {
+      limparCardPaciente(card);
+      atualizarPainelCentral();
+      salvarDadosDoDia(dataSelecionadaStr);
+    }
+  }
 }
 
 // --- FUNÇÕES DE TRANSFERÊNCIA INTERNA ---
 function abrirModalTransfInterna(botao) {
-    cardAtualTransfInterna = botao.closest('.patient-card');
-    document.getElementById('modal-transf-interna').style.display = 'flex';
+  cardAtualTransfInterna = botao.closest(".patient-card");
+  document.getElementById("modal-transf-interna").style.display = "flex";
 }
 
 function fecharModalTransfInterna() {
-    document.getElementById('modal-transf-interna').style.display = 'none';
-    cardAtualTransfInterna = null;
+  document.getElementById("modal-transf-interna").style.display = "none";
+  cardAtualTransfInterna = null;
 }
 
 function confirmarTransfInterna() {
-    const selectDestino = document.getElementById('select-setor-destino');
-    const idSetorDestino = selectDestino ? selectDestino.value : "";
+  const selectDestino = document.getElementById("select-setor-destino");
+  const idSetorDestino = selectDestino ? selectDestino.value : "";
 
-    if (cardAtualTransfInterna && idSetorDestino) {
-        const abaDestino = document.getElementById(idSetorDestino);
-        if (!abaDestino) return;
+  if (cardAtualTransfInterna && idSetorDestino) {
+    const abaDestino = document.getElementById(idSetorDestino);
+    if (!abaDestino) return;
 
-        const containerDestino = abaDestino.querySelector('.patients-container');
-        if (!containerDestino) return;
+    const containerDestino = abaDestino.querySelector(".patients-container");
+    if (!containerDestino) return;
 
-        const cardClonado = cardAtualTransfInterna.cloneNode(true);
-        const primeiroCardDestino = containerDestino.querySelector('.patient-card');
+    const cardClonado = cardAtualTransfInterna.cloneNode(true);
+    const primeiroCardDestino = containerDestino.querySelector(".patient-card");
 
-        if (primeiroCardDestino && primeiroCardDestino.querySelector('.nome-input').value.trim() === "") {
-            containerDestino.replaceChild(cardClonado, primeiroCardDestino);
-        } else {
-            containerDestino.appendChild(cardClonado);
-        }
-
-        const containerOrigem = cardAtualTransfInterna.parentElement;
-        if (containerOrigem.querySelectorAll('.patient-card').length > 1) {
-            cardAtualTransfInterna.remove();
-        } else {
-            limparCardPaciente(cardAtualTransfInterna);
-        }
-
-        fecharModalTransfInterna();
-        atualizarPainelCentral();
-        salvarDadosDoDia(dataSelecionadaStr);
+    if (
+      primeiroCardDestino &&
+      primeiroCardDestino.querySelector(".nome-input").value.trim() === ""
+    ) {
+      containerDestino.replaceChild(cardClonado, primeiroCardDestino);
+    } else {
+      containerDestino.appendChild(cardClonado);
     }
+
+    const containerOrigem = cardAtualTransfInterna.parentElement;
+    if (containerOrigem.querySelectorAll(".patient-card").length > 1) {
+      cardAtualTransfInterna.remove();
+    } else {
+      limparCardPaciente(cardAtualTransfInterna);
+    }
+
+    fecharModalTransfInterna();
+    atualizarPainelCentral();
+    salvarDadosDoDia(dataSelecionadaStr);
+  }
 }
 
 function acumularIndicadoresDoCard(card) {
-    card.querySelectorAll('.vitals-table tbody tr').forEach(tr => {
-        const inputNews = tr.querySelector('.news-input');
-        const newsVal = inputNews ? parseInt(inputNews.value) : NaN;
-        const isento = card.querySelector('.isento-relatorio')?.checked;
+  card.querySelectorAll(".vitals-table tbody tr").forEach((tr) => {
+    const inputNews = tr.querySelector(".news-input");
+    const newsVal = inputNews ? parseInt(inputNews.value) : NaN;
+    const isento = card.querySelector(".isento-relatorio")?.checked;
 
-        if (!isento && !isNaN(newsVal) && inputNews.value.trim() !== "") {
-            if (newsVal <= 1) indicadoresMensais.estavel++;
-            else if (newsVal === 2) indicadoresMensais.baixo++;
-            else if (newsVal >= 3 && newsVal <= 4) indicadoresMensais.medio++;
-            else if (newsVal >= 5) indicadoresMensais.alto++;
-        }
+    if (!isento && !isNaN(newsVal) && inputNews.value.trim() !== "") {
+      if (newsVal <= 1) indicadoresMensais.estavel++;
+      else if (newsVal === 2) indicadoresMensais.baixo++;
+      else if (newsVal >= 3 && newsVal <= 4) indicadoresMensais.medio++;
+      else if (newsVal >= 5) indicadoresMensais.alto++;
+    }
 
-        const tdStatusElement = tr.querySelector('.status-cell');
-        if (tdStatusElement && (tdStatusElement.innerHTML.includes('ALTO RISCO') || tdStatusElement.innerHTML.includes('Time de Resposta Rápida'))) {
-            indicadoresMensais.sepse++;
-        }
-    });
+    const tdStatusElement = tr.querySelector(".status-cell");
+    if (
+      tdStatusElement &&
+      (tdStatusElement.innerHTML.includes("ALTO RISCO") ||
+        tdStatusElement.innerHTML.includes("Time de Resposta Rápida"))
+    ) {
+      indicadoresMensais.sepse++;
+    }
+  });
 }
 
 function darAltaPaciente(botaoAlta) {
-    if (confirm('ATENÇÃO: Realmente dar alta para o paciente e limpar leito?')) {
-        const card = botaoAlta.closest('.patient-card');
-        const container = card.parentElement;
+  if (confirm("ATENÇÃO: Realmente dar alta para o paciente e limpar leito?")) {
+    const card = botaoAlta.closest(".patient-card");
+    const container = card.parentElement;
 
-        acumularIndicadoresDoCard(card);
-        contadoresSaidas.alta++;
+    acumularIndicadoresDoCard(card);
+    contadoresSaidas.alta++;
 
-        if (container.querySelectorAll('.patient-card').length > 1) {
-            card.remove();
-        } else {
-            limparCardPaciente(card);
-        }
-
-        atualizarPainelCentral();
-        salvarDadosDoDia(dataSelecionadaStr);
+    if (container.querySelectorAll(".patient-card").length > 1) {
+      card.remove();
+    } else {
+      limparCardPaciente(card);
     }
+
+    atualizarPainelCentral();
+    salvarDadosDoDia(dataSelecionadaStr);
+  }
 }
 
 function registrarObitoPaciente(botaoObito) {
-    if (confirm('ATENÇÃO: Confirmar registro de ÓBITO do paciente e liberação do leito?')) {
-        const card = botaoObito.closest('.patient-card');
-        const container = card.parentElement;
+  if (
+    confirm(
+      "ATENÇÃO: Confirmar registro de ÓBITO do paciente e liberação do leito?",
+    )
+  ) {
+    const card = botaoObito.closest(".patient-card");
+    const container = card.parentElement;
 
-        acumularIndicadoresDoCard(card);
-        contadoresSaidas.obito++;
+    acumularIndicadoresDoCard(card);
+    contadoresSaidas.obito++;
 
-        if (container.querySelectorAll('.patient-card').length > 1) {
-            card.remove();
-        } else {
-            limparCardPaciente(card);
-        }
-
-        atualizarPainelCentral();
-        salvarDadosDoDia(dataSelecionadaStr);
+    if (container.querySelectorAll(".patient-card").length > 1) {
+      card.remove();
+    } else {
+      limparCardPaciente(card);
     }
+
+    atualizarPainelCentral();
+    salvarDadosDoDia(dataSelecionadaStr);
+  }
 }
 
 function abrirModalTransfExterna(botao) {
-    cardAtualTransf = botao.closest('.patient-card');
-    document.getElementById('modal-transf-externa').style.display = 'flex';
+  cardAtualTransf = botao.closest(".patient-card");
+  document.getElementById("modal-transf-externa").style.display = "flex";
 }
 
 function fecharModalTransf() {
-    document.getElementById('modal-transf-externa').style.display = 'none';
-    cardAtualTransf = null;
+  document.getElementById("modal-transf-externa").style.display = "none";
+  cardAtualTransf = null;
 }
 
 function confirmarTransfExterna() {
-    const select = document.getElementById('select-local-destino');
-    const destinoFinal = select ? select.value : "";
+  const select = document.getElementById("select-local-destino");
+  const destinoFinal = select ? select.value : "";
 
-    if (cardAtualTransf) {
-        const container = cardAtualTransf.parentElement;
+  if (cardAtualTransf) {
+    const container = cardAtualTransf.parentElement;
 
-        acumularIndicadoresDoCard(cardAtualTransf);
-        if (destinoFinal && contadoresSaidas.hasOwnProperty(destinoFinal)) {
-            contadoresSaidas[destinoFinal]++;
-        }
-
-        if (container.querySelectorAll('.patient-card').length > 1) {
-            cardAtualTransf.remove();
-        } else {
-            limparCardPaciente(cardAtualTransf);
-        }
+    acumularIndicadoresDoCard(cardAtualTransf);
+    if (destinoFinal && contadoresSaidas.hasOwnProperty(destinoFinal)) {
+      contadoresSaidas[destinoFinal]++;
     }
-    fecharModalTransf();
-    atualizarPainelCentral();
-    salvarDadosDoDia(dataSelecionadaStr);
+
+    if (container.querySelectorAll(".patient-card").length > 1) {
+      cardAtualTransf.remove();
+    } else {
+      limparCardPaciente(cardAtualTransf);
+    }
+  }
+  fecharModalTransf();
+  atualizarPainelCentral();
+  salvarDadosDoDia(dataSelecionadaStr);
 }
 
 function limparCardPaciente(card) {
-    card.querySelectorAll('input').forEach(input => {
-        if (input.type === 'checkbox') input.checked = false;
-        else input.value = '';
-        input.style.border = '';
-        input.style.backgroundColor = '';
-    });
+  card.querySelectorAll("input").forEach((input) => {
+    if (input.type === "checkbox") input.checked = false;
+    else input.value = "";
+    input.style.border = "";
+    input.style.backgroundColor = "";
+  });
 
-    card.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+  card
+    .querySelectorAll("select")
+    .forEach((select) => (select.selectedIndex = 0));
 
-    card.querySelectorAll('.news-input').forEach(news => {
-        news.value = '';
-        news.style.backgroundColor = 'transparent';
-        news.style.borderColor = '';
-        news.style.color = '';
-    });
+  card.querySelectorAll(".news-input").forEach((news) => {
+    news.value = "";
+    news.style.backgroundColor = "transparent";
+    news.style.borderColor = "";
+    news.style.color = "";
+  });
 
-    card.querySelectorAll('.badge-idade').forEach(badge => {
-        badge.textContent = '--';
-    });
+  card.querySelectorAll(".badge-idade").forEach((badge) => {
+    badge.textContent = "--";
+  });
 
-    card.querySelectorAll('tr.linha-horario-extra').forEach(trExtra => trExtra.remove());
+  card
+    .querySelectorAll("tr.linha-horario-extra")
+    .forEach((trExtra) => trExtra.remove());
 
-    card.querySelectorAll('.vitals-table tbody tr').forEach(linha => {
-        const tdStatus = linha.querySelector('.status-cell');
-        if (tdStatus) tdStatus.innerHTML = '';
-        removerDestaquesLaranja(linha);
-    });
+  card.querySelectorAll(".vitals-table tbody tr").forEach((linha) => {
+    const tdStatus = linha.querySelector(".status-cell");
+    if (tdStatus) tdStatus.innerHTML = "";
+    removerDestaquesLaranja(linha);
+  });
 }
 
 // --- GRÁFICO DE OCUPAÇÃO DIÁRIA ---
 function inicializarGraficoOcupacao() {
-    const ctx = document.getElementById('graficoOcupacao');
-    if (!ctx) return;
+  const ctx = document.getElementById("graficoOcupacao");
+  if (!ctx) return;
 
-    meuGraficoOcupacao = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: Array.from({length: 31}, (_, i) => `Dia ${i + 1}`),
-            datasets: [{
-                label: 'Pacientes Internados',
-                data: historicoOcupacaoDiaria,
-                borderColor: '#0056b3',
-                backgroundColor: 'rgba(0, 86, 179, 0.08)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3,
-                pointRadius: 4,
-                pointBackgroundColor: '#003366'
-            }]
+  meuGraficoOcupacao = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: Array.from({ length: 31 }, (_, i) => `Dia ${i + 1}`),
+      datasets: [
+        {
+          label: "Pacientes Internados",
+          data: historicoOcupacaoDiaria,
+          borderColor: "#0056b3",
+          backgroundColor: "rgba(0, 86, 179, 0.08)",
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: "#003366",
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, ticks: { precision: 0 } }
-            },
-            plugins: { legend: { display: false } }
-        }
-    });
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+      },
+      plugins: {
+        legend: {
+          display: false, // Oculta a legenda redundante
+        },
+      },
+    },
+  });
 }
 
 function atualizarDadosGrafico(totalInternadosHoje) {
-    if (!meuGraficoOcupacao) return;
+  if (!meuGraficoOcupacao) return;
 
-    const partesData = dataSelecionadaStr.split('-');
-    const ano = partesData[0];
-    const mes = partesData[1];
-    const totalDiasNoMes = new Date(ano, mes, 0).getDate();
+  const partesData = dataSelecionadaStr.split("-");
+  const ano = partesData[0];
+  const mes = partesData[1];
+  const totalDiasNoMes = new Date(ano, mes, 0).getDate();
 
-    for (let dia = 1; dia <= 31; dia++) {
-        if (dia <= totalDiasNoMes) {
-            const diaStr = String(dia).padStart(2, '0');
-            const chaveData = `${ano}-${mes}-${diaStr}`;
+  for (let dia = 1; dia <= 31; dia++) {
+    if (dia <= totalDiasNoMes) {
+      const diaStr = String(dia).padStart(2, "0");
+      const chaveData = `${ano}-${mes}-${diaStr}`;
 
-            if (chaveData === dataSelecionadaStr) {
-                historicoOcupacaoDiaria[dia - 1] = totalInternadosHoje;
-            } else {
-                historicoOcupacaoDiaria[dia - 1] = 0;
-            }
-        } else {
-            historicoOcupacaoDiaria[dia - 1] = 0;
-        }
+      if (chaveData === dataSelecionadaStr) {
+        historicoOcupacaoDiaria[dia - 1] = totalInternadosHoje;
+      } else {
+        historicoOcupacaoDiaria[dia - 1] = 0;
+      }
+    } else {
+      historicoOcupacaoDiaria[dia - 1] = 0;
     }
+  }
 
-    meuGraficoOcupacao.data.datasets[0].data = historicoOcupacaoDiaria;
-    meuGraficoOcupacao.update();
+  meuGraficoOcupacao.data.datasets[0].data = historicoOcupacaoDiaria;
+  meuGraficoOcupacao.update();
 
-    const totalMes = historicoOcupacaoDiaria.reduce((acc, curr) => acc + curr, 0);
-    const elTotalMes = document.getElementById('total-acumulado-mes');
-    if (elTotalMes) elTotalMes.textContent = totalMes;
+  const totalMes = historicoOcupacaoDiaria.reduce((acc, curr) => acc + curr, 0);
+  const elTotalMes = document.getElementById("total-acumulado-mes");
+  if (elTotalMes) elTotalMes.textContent = totalMes;
 }
 
 // --- ATUALIZAR CONTADORES NO MENU LATERAL ---
 function atualizarContadoresMenuLateral() {
-    const setoresIds = ['enf1', 'enf2', 'enf3', 'enf4', 'enf5', 'corredor', 'enf-pediatria', 'sala-emergencia'];
+  const setoresIds = [
+    "enf1",
+    "enf2",
+    "enf3",
+    "enf4",
+    "enf5",
+    "corredor",
+    "enf-pediatria",
+    "sala-emergencia",
+  ];
 
-    setoresIds.forEach(idSetor => {
-        const aba = document.getElementById(idSetor);
-        const badgeSpan = document.querySelector(`.badge-contador[data-setor="${idSetor}"]`);
-        
-        if (!aba || !badgeSpan) return;
+  setoresIds.forEach((idSetor) => {
+    const aba = document.getElementById(idSetor);
+    const badgeSpan = document.querySelector(
+      `.badge-contador[data-setor="${idSetor}"]`,
+    );
 
-        let pacientesNoSetor = 0;
-        aba.querySelectorAll('.patient-card').forEach(card => {
-            const nomeInput = card.querySelector('.nome-input');
-            if (nomeInput && nomeInput.value.trim() !== "") {
-                pacientesNoSetor++;
-            }
-        });
+    if (!aba || !badgeSpan) return;
 
-        badgeSpan.textContent = pacientesNoSetor;
+    let pacientesNoSetor = 0;
+    aba.querySelectorAll(".patient-card").forEach((card) => {
+      const nomeInput = card.querySelector(".nome-input");
+      if (nomeInput && nomeInput.value.trim() !== "") {
+        pacientesNoSetor++;
+      }
     });
+
+    badgeSpan.textContent = pacientesNoSetor;
+  });
 }
 
 // --- PAINEL CENTRAL / DASHBOARD METRICS ---
 function atualizarPainelCentral() {
-    let totalPacientes = 0;
-    let totalSepseAtiva = 0;
+  let totalPacientes = 0;
+  let totalSepseAtiva = 0;
 
-    let cntEstavelAtivo = 0;
-    let cntBaixoAtivo = 0;
-    let cntMedioAtivo = 0;
-    let cntAltoAtivo = 0;
+  let cntEstavelAtivo = 0;
+  let cntBaixoAtivo = 0;
+  let cntMedioAtivo = 0;
+  let cntAltoAtivo = 0;
 
-    const listaProtocolosAtivos = [];
-    const agora = new Date();
+  const listaProtocolosAtivos = [];
+  const agora = new Date();
 
-    document.querySelectorAll('.patient-card').forEach(card => {
-        const inputNome = card.querySelector('.nome-input');
-        const isento = card.querySelector('.isento-relatorio')?.checked;
-        const nome = inputNome ? inputNome.value.trim() : "";
+  document.querySelectorAll(".patient-card").forEach((card) => {
+    const inputNome = card.querySelector(".nome-input");
+    const isento = card.querySelector(".isento-relatorio")?.checked;
+    const nome = inputNome ? inputNome.value.trim() : "";
 
-        const abaPai = card.closest('.tab-pane');
-        const idSetor = abaPai ? abaPai.id.toUpperCase() : "LEITO";
+    const abaPai = card.closest(".tab-pane");
+    const idSetor = abaPai ? abaPai.id.toUpperCase() : "LEITO";
 
-        if (nome !== "") {
-            totalPacientes++;
+    if (nome !== "") {
+      totalPacientes++;
 
-            let cardTemSepse = false;
-            let cardTemProtocoloAberto = false;
-            let horaAberturaSepse = null;
+      let cardTemSepse = false;
+      let cardTemProtocoloAberto = false;
+      let horaAberturaSepse = null;
 
-            card.querySelectorAll('.vitals-table tbody tr').forEach(tr => {
-                const tdStatusElement = tr.querySelector('.status-cell');
-                const htmlStatus = tdStatusElement ? tdStatusElement.innerHTML : '';
-                
-                const inputNews = tr.querySelector('.news-input');
-                const newsVal = inputNews ? parseInt(inputNews.value) : NaN;
-                
-                const horaTabela = tr.getAttribute('data-hora') || (tr.querySelector('.time-col') ? tr.querySelector('.time-col')?.textContent.trim() : "08:00");
-                
-                const protocoloSelect = tr.querySelector('.protocolo-select');
-                const abertoProtocolo = protocoloSelect ? protocoloSelect.value : "";
+      card.querySelectorAll(".vitals-table tbody tr").forEach((tr) => {
+        const tdStatusElement = tr.querySelector(".status-cell");
+        const htmlStatus = tdStatusElement ? tdStatusElement.innerHTML : "";
 
-                if (htmlStatus.includes('ALTO RISCO') || htmlStatus.includes('Time de Resposta Rápida')) {
-                    cardTemSepse = true; 
-                    
-                    if (abertoProtocolo === "Sim") {
-                        cardTemProtocoloAberto = true;
-                        if (!horaAberturaSepse) horaAberturaSepse = horaTabela;
-                    }
-                }
+        const inputNews = tr.querySelector(".news-input");
+        const newsVal = inputNews ? parseInt(inputNews.value) : NaN;
 
-                if (!isento && !isNaN(newsVal) && inputNews.value.trim() !== "") {
-                    if (newsVal <= 1) {
-                        cntEstavelAtivo++;
-                    } else if (newsVal === 2) {
-                        cntBaixoAtivo++;
-                    } else if (newsVal >= 3 && newsVal <= 4) {
-                        cntMedioAtivo++;
-                    } else if (newsVal >= 5) {
-                        cntAltoAtivo++;
-                    }
-                }
-            });
+        const horaTabela =
+          tr.getAttribute("data-hora") ||
+          (tr.querySelector(".time-col")
+            ? tr.querySelector(".time-col")?.textContent.trim()
+            : "08:00");
 
-            if (cardTemSepse) {
-                totalSepseAtiva++; 
+        const protocoloSelect = tr.querySelector(".protocolo-select");
+        const abertoProtocolo = protocoloSelect ? protocoloSelect.value : "";
 
-                if (cardTemProtocoloAberto) {
-                    const dataFormatada = agora.toLocaleDateString('pt-BR');
-                    listaProtocolosAtivos.push({
-                        nome: nome,
-                        setor: idSetor,
-                        dataHora: `${dataFormatada} às ${horaAberturaSepse || '08:00'}`,
-                        vigencia: "72h"
-                    });
-                }
-            }
+        if (
+          htmlStatus.includes("ALTO RISCO") ||
+          htmlStatus.includes("Time de Resposta Rápida")
+        ) {
+          cardTemSepse = true;
+
+          if (abertoProtocolo === "Sim") {
+            cardTemProtocoloAberto = true;
+            if (!horaAberturaSepse) horaAberturaSepse = horaTabela;
+          }
         }
-    });
 
-    const containerProtocolos = document.getElementById('container-protocolos-ativos');
-    if (containerProtocolos) {
-        if (listaProtocolosAtivos.length === 0) {
-            containerProtocolos.innerHTML = `
+        if (!isento && !isNaN(newsVal) && inputNews.value.trim() !== "") {
+          if (newsVal <= 1) {
+            cntEstavelAtivo++;
+          } else if (newsVal === 2) {
+            cntBaixoAtivo++;
+          } else if (newsVal >= 3 && newsVal <= 4) {
+            cntMedioAtivo++;
+          } else if (newsVal >= 5) {
+            cntAltoAtivo++;
+          }
+        }
+      });
+
+      if (cardTemSepse) {
+        totalSepseAtiva++;
+
+        if (cardTemProtocoloAberto) {
+          const dataFormatada = agora.toLocaleDateString("pt-BR");
+          listaProtocolosAtivos.push({
+            nome: nome,
+            setor: idSetor,
+            dataHora: `${dataFormatada} às ${horaAberturaSepse || "08:00"}`,
+            vigencia: "72h",
+          });
+        }
+      }
+    }
+  });
+
+  const containerProtocolos = document.getElementById(
+    "container-protocolos-ativos",
+  );
+  if (containerProtocolos) {
+    if (listaProtocolosAtivos.length === 0) {
+      containerProtocolos.innerHTML = `
                 <div style="height: 100%; min-height: 120px; display: flex; align-items: center; justify-content: center; border: 1px dashed #cbd5e1; border-radius: 6px; background: #ffffff;">
                     <span style="color: #64748b; font-size: 0.85rem; font-style: italic;">Nenhum protocolo ativo no momento</span>
                 </div>`;
-        } else {
-            containerProtocolos.innerHTML = listaProtocolosAtivos.map(p => `
+    } else {
+      containerProtocolos.innerHTML = listaProtocolosAtivos
+        .map(
+          (p) => `
                 <div style="background: #fff5f5; border: 1px solid #fecaca; border-left: 4px solid #dc3545; border-radius: 6px; padding: 10px 14px; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                     <div>
                         <strong style="color: #991b1b; font-size: 0.9rem; text-transform: uppercase;">${p.nome}</strong> 
@@ -1357,62 +1522,88 @@ function atualizarPainelCentral() {
                         </span>
                     </div>
                 </div>
-            `).join('');
-        }
+            `,
+        )
+        .join("");
     }
+  }
 
-    document.getElementById('dash-pacientes').textContent = totalPacientes;
-    document.getElementById('dash-sepse').textContent = indicadoresMensais.sepse + totalSepseAtiva;
+  document.getElementById("dash-pacientes").textContent = totalPacientes;
+  document.getElementById("dash-sepse").textContent =
+    indicadoresMensais.sepse + totalSepseAtiva;
 
-    document.getElementById('dash-estavel').textContent = indicadoresMensais.estavel + cntEstavelAtivo;
-    document.getElementById('dash-baixo').textContent = indicadoresMensais.baixo + cntBaixoAtivo;
-    document.getElementById('dash-medio').textContent = indicadoresMensais.medio + cntMedioAtivo;
-    document.getElementById('dash-alto').textContent = indicadoresMensais.alto + cntAltoAtivo;
+  document.getElementById("dash-estavel").textContent =
+    indicadoresMensais.estavel + cntEstavelAtivo;
+  document.getElementById("dash-baixo").textContent =
+    indicadoresMensais.baixo + cntBaixoAtivo;
+  document.getElementById("dash-medio").textContent =
+    indicadoresMensais.medio + cntMedioAtivo;
+  document.getElementById("dash-alto").textContent =
+    indicadoresMensais.alto + cntAltoAtivo;
 
-    const elAlta = document.getElementById('saida-alta');
-    const elHcUfu = document.getElementById('saida-hc-ufu');
-    const elHospMunic = document.getElementById('saida-hospital-municipal');
-    const elCip = document.getElementById('saida-cip');
-    const elCaps = document.getElementById('saida-caps');
-    const elUcci = document.getElementById('saida-ucci');
-    const elObito = document.getElementById('saida-obito');
+  const elAlta = document.getElementById("saida-alta");
+  const elHcUfu = document.getElementById("saida-hc-ufu");
+  const elHospMunic = document.getElementById("saida-hospital-municipal");
+  const elCip = document.getElementById("saida-cip");
+  const elCaps = document.getElementById("saida-caps");
+  const elUcci = document.getElementById("saida-ucci");
+  const elObito = document.getElementById("saida-obito");
 
-    if (elAlta) elAlta.textContent = contadoresSaidas.alta;
-    if (elHcUfu) elHcUfu.textContent = contadoresSaidas["HC UFU"];
-    if (elHospMunic) elHospMunic.textContent = contadoresSaidas["Hospital Municipal"];
-    if (elCip) elCip.textContent = contadoresSaidas["CIP"];
-    if (elCaps) elCaps.textContent = contadoresSaidas["CAPS"];
-    if (elUcci) elUcci.textContent = contadoresSaidas["UCCI"];
-    if (elObito) elObito.textContent = contadoresSaidas.obito;
+  if (elAlta) elAlta.textContent = contadoresSaidas.alta;
+  if (elHcUfu) elHcUfu.textContent = contadoresSaidas["HC UFU"];
+  if (elHospMunic)
+    elHospMunic.textContent = contadoresSaidas["Hospital Municipal"];
+  if (elCip) elCip.textContent = contadoresSaidas["CIP"];
+  if (elCaps) elCaps.textContent = contadoresSaidas["CAPS"];
+  if (elUcci) elUcci.textContent = contadoresSaidas["UCCI"];
+  if (elObito) elObito.textContent = contadoresSaidas.obito;
 
-    atualizarDadosGrafico(totalPacientes);
-    atualizarContadoresMenuLateral();
+  atualizarDadosGrafico(totalPacientes);
+  atualizarContadoresMenuLateral();
 }
 
 // --- CENTRAL DE RELATÓRIO GERENCIAL E EXECUTIVO ---
 function abrirModalRelatorioGerencial() {
-    const modal = document.getElementById('modal-relatorio-gerencial');
-    const containerTexto = document.getElementById('conteudo-relatorio-gerencial');
-    if (!modal || !containerTexto) return;
+  const modal = document.getElementById("modal-relatorio-gerencial");
+  const containerTexto = document.getElementById(
+    "conteudo-relatorio-gerencial",
+  );
+  if (!modal || !containerTexto) return;
 
-    const partesData = dataSelecionadaStr.split('-');
-    const ano = partesData[0];
-    const mes = partesData[1];
-    const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-    const nomeMesAtual = nomesMeses[parseInt(mes, 10) - 1];
+  const partesData = dataSelecionadaStr.split("-");
+  const ano = partesData[0];
+  const mes = partesData[1];
+  const nomesMeses = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+  const nomeMesAtual = nomesMeses[parseInt(mes, 10) - 1];
 
-    const totalMesOcupacao = historicoOcupacaoDiaria.reduce((acc, curr) => acc + curr, 0);
+  const totalMesOcupacao = historicoOcupacaoDiaria.reduce(
+    (acc, curr) => acc + curr,
+    0,
+  );
 
-    const totalAltas = contadoresSaidas.alta || 0;
-    const totalObitos = contadoresSaidas.obito || 0;
-    const totalTransfExternas = (contadoresSaidas["HC UFU"] || 0) + 
-                                (contadoresSaidas["Hospital Municipal"] || 0) + 
-                                (contadoresSaidas["CIP"] || 0) + 
-                                (contadoresSaidas["CAPS"] || 0) + 
-                                (contadoresSaidas["UCCI"] || 0);
+  const totalAltas = contadoresSaidas.alta || 0;
+  const totalObitos = contadoresSaidas.obito || 0;
+  const totalTransfExternas =
+    (contadoresSaidas["HC UFU"] || 0) +
+    (contadoresSaidas["Hospital Municipal"] || 0) +
+    (contadoresSaidas["CIP"] || 0) +
+    (contadoresSaidas["CAPS"] || 0) +
+    (contadoresSaidas["UCCI"] || 0);
 
-    const relatorioTexto = 
-`RELATÓRIO GERENCIAL DE ASSISTÊNCIA E OCUPAÇÃO
+  const relatorioTexto = `RELATÓRIO GERENCIAL DE ASSISTÊNCIA E OCUPAÇÃO
 Período de Referência: ${nomeMesAtual} / ${ano}
 
 1. INDICADORES DE OCUPAÇÃO:
@@ -1429,40 +1620,50 @@ Período de Referência: ${nomeMesAtual} / ${ano}
 • Transferências Externas: ${totalTransfExternas} (HC UFU: ${contadoresSaidas["HC UFU"] || 0}, Hosp. Municipal: ${contadoresSaidas["Hospital Municipal"] || 0}, CIP: ${contadoresSaidas["CIP"] || 0}, CAPS: ${contadoresSaidas["CAPS"] || 0}, UCCI: ${contadoresSaidas["UCCI"] || 0})
 • Óbitos: ${totalObitos}`;
 
-    containerTexto.textContent = relatorioTexto;
-    modal.style.display = 'flex';
+  containerTexto.textContent = relatorioTexto;
+  modal.style.display = "flex";
 }
 
 function fecharModalRelatorioGerencial() {
-    const modal = document.getElementById('modal-relatorio-gerencial');
-    if (modal) modal.style.display = 'none';
+  const modal = document.getElementById("modal-relatorio-gerencial");
+  if (modal) modal.style.display = "none";
 }
 
 function copiarResumoGerencial() {
-    const containerTexto = document.getElementById('conteudo-relatorio-gerencial');
-    if (!containerTexto) return;
+  const containerTexto = document.getElementById(
+    "conteudo-relatorio-gerencial",
+  );
+  if (!containerTexto) return;
 
-    navigator.clipboard.writeText(containerTexto.textContent).catch(err => {
-        console.error('Erro ao copiar texto: ', err);
-    });
+  navigator.clipboard.writeText(containerTexto.textContent).catch((err) => {
+    console.error("Erro ao copiar texto: ", err);
+  });
 }
 
 function imprimirRelatorioGerencial() {
-    const conteudo = document.getElementById('conteudo-relatorio-gerencial').innerHTML;
-    const janelaImpressao = window.open('', '', 'height=600,width=800');
-    
-    janelaImpressao.document.write('<html><head><title>Relatório Gerencial</title>');
-    janelaImpressao.document.write('<style>body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; color: #333; white-space: pre-line; }</style>');
-    janelaImpressao.document.write('</head><body>');
-    janelaImpressao.document.write('<h2 style="color: #003366; border-bottom: 2px solid #003366; padding-bottom: 8px;">Relatório Gerencial de Assistência</h2>');
-    janelaImpressao.document.write(conteudo);
-    janelaImpressao.document.write('</body></html>');
-    
-    janelaImpressao.document.close();
-    janelaImpressao.focus();
-    
-    setTimeout(() => {
-        janelaImpressao.print();
-        janelaImpressao.close();
-    }, 500);
+  const conteudo = document.getElementById(
+    "conteudo-relatorio-gerencial",
+  ).innerHTML;
+  const janelaImpressao = window.open("", "", "height=600,width=800");
+
+  janelaImpressao.document.write(
+    "<html><head><title>Relatório Gerencial</title>",
+  );
+  janelaImpressao.document.write(
+    "<style>body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; color: #333; white-space: pre-line; }</style>",
+  );
+  janelaImpressao.document.write("</head><body>");
+  janelaImpressao.document.write(
+    '<h2 style="color: #003366; border-bottom: 2px solid #003366; padding-bottom: 8px;">Relatório Gerencial de Assistência</h2>',
+  );
+  janelaImpressao.document.write(conteudo);
+  janelaImpressao.document.write("</body></html>");
+
+  janelaImpressao.document.close();
+  janelaImpressao.focus();
+
+  setTimeout(() => {
+    janelaImpressao.print();
+    janelaImpressao.close();
+  }, 500);
 }
